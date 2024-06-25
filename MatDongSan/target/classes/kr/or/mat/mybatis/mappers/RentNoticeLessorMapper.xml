@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.rentNotice.mapper.RentNoticeLessorMapper">
+
+
+<resultMap type="RentNoticeVO" id="RentNoticeResultMap" autoMapping="true">
+		<id property="noticeNo" column="NOTICE_NO"/>
+			
+		<association property="rentBldg" javaType="RentBldgVO" autoMapping="true">
+			  <id property="rentBldgNo" column="RENT_BLDG_NO"/>
+		</association>
+		<association property="users" javaType="UserVO" autoMapping="true">
+			  <id property="userNo" column="USER_NO"/>
+		</association>
+		<collection property="attachFileList" ofType="TbAttachFileVO" autoMapping="true"/>
+</resultMap>
+
+<update id="updateNoticeCnt" parameterType="string">
+UPDATE RENT_NOTICE
+SET NOTICE_CNT = NOTICE_CNT+1
+WHERE NOTICE_NO = #{noticeNo, jdbcType=VARCHAR}
+</update>
+
+	<select id="selectRentNotice" parameterType="RentNoticeVO" resultMap="RentNoticeResultMap">
+<!-- 				SELECT -->
+<!-- 				    A.NOTICE_NO  /* 공지번호*/  -->
+<!-- 				    ,A.RENT_BLDG_NO  /* 임대관리건물등록번호*/  -->
+<!-- 				    ,A.NOTICE_SJ  /* 공지제목*/  -->
+<!-- 				    ,A.NOTICE_CN  /* 공지내용*/  -->
+<!-- 				    ,A.NOTICE_DT  /* 공지작성일시*/  -->
+<!-- 				    ,A.NOTICE_UPDDE_DT  /* 공지수정일시*/  -->
+<!-- 				    ,A.NOTICE_DEL_DT  /* 공지삭제일시*/  -->
+<!-- 				    ,A.NOTICE_DEL_YN  /* 공지삭제여부*/  -->
+<!-- 				    ,A.USER_NO  /* 공지작성자번호*/  -->
+<!-- 			        ,B.BLDG_NM /* 건물명 */ -->
+<!--                     ,C.USER_NM -->
+<!--                     ,A.UNITY_ATCHMNFL_NO -->
+<!--                     ,D.WEB_PATH -->
+<!--                     ,D.ATCHMNFL_SN -->
+<!--                     ,D.STRE_FILE_NM -->
+<!-- 				FROM RENT_NOTICE A, RENT_BLDG B, USERS C, TB_ATTACH_FILE D -->
+<!-- 				WHERE A.USER_NO =  #{userNo, jdbcType=VARCHAR} -->
+<!-- 			    AND A.RENT_BLDG_NO = B.RENT_BLDG_NO -->
+<!--                 AND A.USER_NO = C.USER_NO -->
+<!--                 AND A.NOTICE_NO = #{noticeNo, jdbcType=VARCHAR} -->
+<!--                 AND A.UNITY_ATCHMNFL_NO = D.UNITY_ATCHMNFL_NO -->
+				SELECT
+				    A.NOTICE_NO  /* 공지번호*/ 
+				    ,A.RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+				    ,A.NOTICE_SJ  /* 공지제목*/ 
+				    ,A.NOTICE_CN  /* 공지내용*/ 
+				    ,A.NOTICE_DT  /* 공지작성일시*/ 
+				    ,A.NOTICE_UPDDE_DT  /* 공지수정일시*/ 
+				    ,A.NOTICE_DEL_DT  /* 공지삭제일시*/ 
+				    ,A.NOTICE_DEL_YN  /* 공지삭제여부*/ 
+				    ,A.USER_NO  /* 공지작성자번호*/ 
+			        ,B.BLDG_NM /* 건물명 */
+                    ,C.USER_NM
+                    ,A.UNITY_ATCHMNFL_NO
+				FROM RENT_NOTICE A, RENT_BLDG B, USERS C
+				WHERE A.USER_NO =  #{userNo, jdbcType=VARCHAR}
+			    AND A.RENT_BLDG_NO = B.RENT_BLDG_NO
+                AND A.USER_NO = C.USER_NO
+                AND A.NOTICE_NO = #{noticeNo, jdbcType=VARCHAR}
+	</select>
+	<insert id="insertRentNotice" parameterType="RentNoticeVO">
+		<selectKey keyProperty="noticeNo" resultType="String"
+			order="BEFORE">
+			SELECT 'NT' || TO_CHAR(SYSDATE, 'YYMMDD') || TO_CHAR(RENTROOM_SEQ.NEXTVAL, 'FM000')
+  			FROM DUAL
+		</selectKey>
+		INSERT INTO rent_notice (
+		    NOTICE_NO  /* 공지번호*/ 
+		    ,RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+		    ,NOTICE_SJ  /* 공지제목*/ 
+		    ,NOTICE_CN  /* 공지내용*/ 
+		    ,USER_NO  /* 공지작성자번호*/
+<!-- 		    ,UNITY_ATCHMNFL_NO  /* 통합첨부파일번호 */ -->
+		) VALUES (
+		    #{noticeNo, jdbcType=VARCHAR}
+		    , #{rentBldgNo, jdbcType=VARCHAR}
+		    , #{noticeSj, jdbcType=VARCHAR}
+		    , #{noticeCn, jdbcType=VARCHAR}
+		    , #{userNo, jdbcType=VARCHAR}
+<!-- 		    , #{unityAtchmnflNo, jdbcType=VARCHAR} -->
+		)
+	</insert>
+	<select id="selectTotalRecord" resultType="int" parameterType="kr.or.mat.paging.PaginationInfo">
+				SELECT COUNT(*)
+  				FROM RENT_NOTICE A, RENT_BLDG B
+				WHERE A.USER_NO = #{userNo,jdbcType=VARCHAR}
+			    AND A.RENT_BLDG_NO = B.RENT_BLDG_NO
+ 	</select>
+
+	<select id="selectAllRentNoticeList" parameterType="kr.or.mat.paging.PaginationInfo" resultMap="RentNoticeResultMap">
+	SELECT K.* FROM (SELECT ROWNUM KNUM, S.* FROM 
+		(SELECT H.*, ROWNUM FROM 
+			( SELECT ROWNUM RNUM, G.* FROM (
+				SELECT
+				    A.NOTICE_NO  /* 공지번호*/ 
+				    ,A.RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+				    ,A.NOTICE_SJ  /* 공지제목*/ 
+				    ,A.NOTICE_CN  /* 공지내용*/ 
+				    ,A.NOTICE_DT  /* 공지작성일시*/ 
+				    ,A.NOTICE_UPDDE_DT  /* 공지수정일시*/ 
+				    ,A.NOTICE_DEL_DT  /* 공지삭제일시*/ 
+				    ,A.NOTICE_DEL_YN  /* 공지삭제여부*/ 
+				    ,A.USER_NO  /* 공지작성자번호*/ 
+			        ,B.BLDG_NM /* 건물명 */
+			        ,C.USER_NM
+			        ,A.NOTICE_CNT /* 조회수 */
+				FROM RENT_NOTICE A, RENT_BLDG B, USERS C
+				WHERE A.USER_NO = #{userNo, jdbcType=VARCHAR}
+			    AND A.RENT_BLDG_NO = B.RENT_BLDG_NO
+			    AND A.NOTICE_DEL_YN = 'N'
+			    AND A.USER_NO = C.USER_NO ORDER BY A.NOTICE_NO DESC
+			    ) G ) H ORDER BY RNUM DESC) S
+		
+		ORDER BY KNUM DESC
+ ) K   
+		<![CDATA[ 
+		WHERE RNUM >= #{firstRecord} AND RNUM <= #{lastRecord}
+		]]> 
+			    
+	
+	</select>
+	
+	<update id="updateRentNotice" parameterType="RentNoticeVO">
+		UPDATE RENT_NOTICE 
+		SET 
+		    RENT_BLDG_NO  = #{rentBldgNo, jdbcType=VARCHAR}
+		    ,NOTICE_SJ  = #{noticeSj, jdbcType=VARCHAR}
+		    ,NOTICE_CN = #{noticeCn, jdbcType=VARCHAR}
+<!-- 		    ,UNITY_ATCHMNFL_NO  = #{unityAtchmnflNo, jdbcType=VARCHAR} -->
+		    ,NOTICE_UPDDE_DT = SYSDATE
+		WHERE NOTICE_NO = #{noticeNo, jdbcType=VARCHAR}
+		AND USER_NO = #{userNo, jdbcType=VARCHAR}
+	
+	</update>
+	
+	
+	<update id="deleteRentNotice" parameterType="String">
+		UPDATE RENT_NOTICE
+		SET NOTICE_DEL_YN = 'Y'
+		WHERE NOTICE_NO = #{noticeNo, jdbcType=VARCHAR}
+		AND USER_NO = #{userNo, jdbcType=VARCHAR}
+	</update>
+</mapper>

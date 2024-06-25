@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd" >
+<tiles-definitions>
+	<!-- 임대인 -->
+	<definition name="parent" template="/WEB-INF/views/templateBS.jsp">
+		<put-attribute name="preScript" value="/WEB-INF/includee/mdshub/preScript.jsp" />
+		<put-attribute name="header"  value="/WEB-INF/includee/mdshub/header.jsp" />
+		<put-attribute name="leftMenu"  value="/WEB-INF/includee/mdshub/leftMenu.jsp" />
+		
+		<put-attribute name="footer"  value="/WEB-INF/includee/mdshub/footer.jsp" />
+		<put-attribute name="postScript"  value="/WEB-INF/includee/mdshub/postScript.jsp" />
+	</definition>
+	<definition name="mdshub/*" extends="parent">
+		<put-attribute name="content" value="/WEB-INF/views/mdshub/{1}.jsp" />
+	</definition>
+	<definition name="mdshub/lessor/*" extends="parent">
+		<put-attribute name="content" value="/WEB-INF/views/mdshub/lessor/{1}.jsp" />
+	</definition>
+	
+	<!-- 임차인 -->
+	<definition name="parent2" template="/WEB-INF/views/templateBS2.jsp">
+		<put-attribute name="preScript" value="/WEB-INF/includee/mdshub/preScript.jsp" />
+		<put-attribute name="header"  value="/WEB-INF/includee/mdshub/header.jsp" />
+		<put-attribute name="leftMenu2"  value="/WEB-INF/includee/mdshub/leftMenu2.jsp" />
+		
+		<put-attribute name="footer"  value="/WEB-INF/includee/mdshub/footer.jsp" />
+		<put-attribute name="postScript"  value="/WEB-INF/includee/mdshub/postScript.jsp" />
+	</definition>
+	
+	<definition name="mdshub/lessee/*" extends="parent2">
+		<put-attribute name="content" value="/WEB-INF/views/mdshub/lessee/{1}.jsp" />
+	</definition>
+	<definition name="mdshub/*" extends="parent2">
+		<put-attribute name="content" value="/WEB-INF/views/mdshub/{1}.jsp" />
+	</definition>
+	
+	<!-- 거래 -->
+	<definition name="parent3" template="/WEB-INF/views/templateBS3.jsp">
+		<put-attribute name="preScript3" value="/WEB-INF/includee/mds/preScript.jsp" />
+		<put-attribute name="header3"  value="/WEB-INF/includee/mds/header.jsp" />
+		
+		<put-attribute name="footer3"  value="/WEB-INF/includee/mds/footer.jsp" />
+		<put-attribute name="postScript3"  value="/WEB-INF/includee/mds/postScript.jsp" />
+	</definition>
+	
+	<definition name="mds/index" extends="parent3">
+		<put-attribute name="content" value="/WEB-INF/views/mds/index.jsp" />
+	</definition>
+	
+	
+</tiles-definitions>

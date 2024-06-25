@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd" >
+<tiles-definitions>
+	<!-- 임대인 -->
+	<!--  방법1)여러군데서 쓰인다면 내 화면용 parent만들어서 복사해서 만들 -->
+	<definition name="parenSK" extends="parent" template="">
+	</definition>
+	<definition name="mdshub/*" extends="parent">
+		<put-attribute name="content" value="/WEB-INF/views/mdshub/{1}.jsp" />
+	</definition>
+	<definition name="mdshub/lessor/*" extends="parent">
+		<put-attribute name="content" value="/WEB-INF/views/mdshub/lessor/{1}.jsp" />
+	</definition>
+	
+	
+	<definition name="parent3" template="/WEB-INF/views/templateBS3.jsp">
+		<put-attribute name="preScript3" value="/WEB-INF/includee/mds/preScript.jsp" />
+		<put-attribute name="header3"  value="/WEB-INF/includee/mds/header.jsp" />
+		
+		<put-attribute name="footer3"  value="/WEB-INF/includee/mds/footer.jsp" />
+		<put-attribute name="postScript3"  value="/WEB-INF/includee/mds/postScript.jsp" />
+	</definition>
+	
+	<definition name="mds/index" extends="parent3">
+		<put-attribute name="content" value="/WEB-INF/views/mds/index.jsp" />
+	</definition>
+	
+	
+	
+</tiles-definitions>

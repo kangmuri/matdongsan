@@ -1,0 +1,719 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.rentContract.mapper.RentContractMapper">
+
+<resultMap type="RentContractVO" id="RentContractResultMap" autoMapping="true">
+		<id property="cntrctRentNo" column="CNTRCT_RENT_NO"/>
+			
+		<association property="rentRoom" javaType="RentRoomVO" autoMapping="true">
+			  <id property="rentRoomNo" column="RENT_ROOM_NO"/>
+	        <association property="room"  javaType="RoomVO" autoMapping="true"/>
+	        <association property="rentBldg"  javaType="RentBldgVO" autoMapping="true"/>
+		</association>
+		
+</resultMap>
+
+
+	<insert id="insertRentContract" parameterType="RentContractVO">
+		<selectKey keyProperty="cntrctRentNo" resultType="String" order="BEFORE">
+		SELECT 'CRC' || TO_CHAR(SYSDATE, 'YYMMDD') || TO_CHAR(CNTRCT_RENT_SEQ.NEXTVAL, 'FM000')
+ 			FROM DUAL
+		</selectKey>
+		INSERT INTO CNTRCT_RENT (
+				PRUF_KND  /* 증빙종류 */
+				,PRUF_MTHD  /* 증빙방식 */
+				,PRUF_DE  /* 증빙발행일자 */
+				,CNTRCT_RENT_NO  /* 임대관리계약정보번호 */
+				,CNTRCTR_NM  /* 계약자명 */
+				,MBTLNUM  /* 휴대폰번호 */
+				,EMAIL_ADRES  /* 이메일주소 */
+				,VHCLE_YN  /* 차량보유여부 */
+				,ANIMAL_YN  /* 반려동물여부 */
+				,CTP_PIC_NAME  /* 계약담당자명 */
+				,CTP_PIC_EMAIL  /* 계약담당자이메일주소 */
+				,CTP_PIC_MBTLNUM  /* 계약담당자휴대폰번호 */
+				,DCT_RENT_AR  /* 임대할부분면적 */
+				,DCT_CLSF  /* 계약형태분류 */
+				,RENT_CND  /* 임대료 납부조건 */
+				,DCT_BGNG  /* 계약시작일자 */
+				,DCT_END  /* 계약만료일자 */
+				,CTP_VAT_APPLC_YN  /* 부가세적용여부 */
+				,GRNTE_AMT  /* 보증금 */
+				,MHL_AMT  /* 임대료 */
+				,MANAGECT_AMT  /* 관리비 */
+				,CTP_RCPMNYER  /* 입금자 */
+				,PRUF_NM  /* 증빙구분 */
+				,CTP_DEDT_DE  /* 납기일자 */
+				,MT_RCPMNY_AMT  /* 월입금액 */
+				,CTP__UPDDE_DT  /* 계약서수정일시 */
+				,RENT_ROOM_NO  /* 임대관리방등록번호 */
+				,LESSEE_NO  /* 사용자번호 */
+		)VALUES(
+				#{prufKnd, jdbcType=VARCHAR}
+				, #{prufMthd, jdbcType=VARCHAR}
+				, #{prufDe, jdbcType=NUMERIC}
+				, #{cntrctRentNo, jdbcType=VARCHAR}
+				, #{cntrctrNm, jdbcType=VARCHAR}
+				, #{mbtlnum, jdbcType=VARCHAR}
+				, #{emailAdres, jdbcType=VARCHAR}
+				, #{vhcleYn, jdbcType=CHAR}
+				, #{animalYn, jdbcType=CHAR}
+				, #{ctpPicName, jdbcType=VARCHAR}
+				, #{ctpPicEmail, jdbcType=VARCHAR}
+				, #{ctpPicMbtlnum, jdbcType=VARCHAR}
+				, #{dctRentAr, jdbcType=NUMERIC}
+				, #{dctClsf, jdbcType=VARCHAR}
+				, #{rentCnd, jdbcType=VARCHAR}
+				, #{dctBgng, jdbcType=DATE}
+				, #{dctEnd, jdbcType=DATE}
+				, #{ctpVatApplcYn, jdbcType=VARCHAR}
+				, #{grnteAmt, jdbcType=NUMERIC}
+				, #{mhlAmt, jdbcType=NUMERIC}
+				, #{managectAmt, jdbcType=NUMERIC}
+				, #{ctpRcpmnyer, jdbcType=VARCHAR}
+				, #{prufNm, jdbcType=VARCHAR}
+				, #{ctpDedtDe, jdbcType=NUMERIC}
+				, #{mtRcpmnyAmt, jdbcType=NUMERIC}
+				, #{ctpUpddeDt, jdbcType=DATE}
+				, #{rentRoomNo, jdbcType=VARCHAR}
+				, #{lesseeNo, jdbcType=VARCHAR}
+		)
+	
+	</insert>
+	
+	<update id="updateRentContractStts">
+	  <![CDATA[
+			UPDATE CNTRCT_RENT 
+	    	SET CNTRCT_STTS =
+	        CASE
+	            WHEN DCT_END < TRUNC(SYSDATE) THEN 'RSTTS04' /* 계약만료 상태 업데이트 */
+	            WHEN DCT_BGNG > TRUNC(SYSDATE) THEN 'RSTTS02'  /* 입주예정 상태 업데이트 */
+	            WHEN DCT_BGNG <= TRUNC(SYSDATE) AND DCT_END >= TRUNC(SYSDATE) THEN 'RSTTS01' /* 입주중 상태 업데이트 */
+	        END
+        ]]>
+	</update>
+	
+	<select id="selectRentBldgCntrtList" parameterType="RentContractVO" resultMap="RentContractResultMap">
+		SELECT 
+			CR.PRUF_KND  /* 증빙종류*/ 
+			,CR.PRUF_MTHD  /* 증빙방식*/ 
+			,CR.PRUF_DE /* 증빙발행일자*/ 
+			,CR.CNTRCT_STTS  /* 계약상태*/ 
+			,CR.CNTRCT_RENT_NO  /* 임대관리계약정보번호*/ 
+			,CR.CNTRCTR_NM  /* 계약자명*/ 
+			,CR.MBTLNUM  /* 휴대폰번호*/ 
+			,CR.EMAIL_ADRES  /* 이메일주소*/ 
+			,CR.VHCLE_YN  /* 차량보유여부*/ 
+			,CR.ANIMAL_YN  /* 반려동물여부*/ 
+			,CR.CTP_PIC_NAME  /* 계약담당자명*/ 
+			,CR.CTP_PIC_EMAIL  /* 계약담당자이메일주소*/ 
+			,CR.CTP_PIC_MBTLNUM  /* 계약담당자휴대폰번호*/ 
+			,CR.DCT_RENT_AR /* 임대할부분면적*/ 
+			,CR.DCT_CLSF  /* 계약형태분류*/ 
+			,CR.RENT_CND  /* 임대료 납부조건*/ 
+			,TO_CHAR(CR.DCT_BGNG, 'YYYY-MM-DD') DCT_BGNG /* 계약시작일자*/ 
+			,TO_CHAR(CR.DCT_END, 'YYYY-MM-DD') DCT_END  /* 계약만료일자*/ 
+			,CR.CNTRCT_DE  /* 계약정보생성일자*/ 
+			,CR.CTP_VAT_APPLC_YN  /* 부가세적용여부*/ 
+			,CR.GRNTE_AMT /* 보증금*/ 
+			,CR.MHL_AMT /* 임대료*/ 
+			,CR.MANAGECT_AMT/* 관리비*/ 
+			,CR.CTP_RCPMNYER  /* 입금자*/ 
+			,CR.PRUF_NM  /* 증빙구분*/ 
+			,CR.CTP_DEDT_DE /* 납기일자*/ 
+			,CR.MT_RCPMNY_AMT  /* 월입금액*/ 
+			,CR.CTP__UPDDE_DT  /* 계약서수정일시*/ 
+			,CR.CTP_DEL_YN  /* 계약서삭제여부*/ 
+			,CR.RENT_ROOM_NO  /* 임대관리방등록번호*/ 
+			,CR.LESSEE_NO  /* 사용자번호*/ 
+            ,RR.ROOM_UNGR_YN  /* 지하여부*/ 
+            ,RR.ROOM_CNT  /* 방 수*/ 
+            ,RR.LIVING_TYPE  /* 거실유형*/ 
+            ,RR.RENT_ROOM_NO  /* 임대관리방등록번호*/ 
+            ,RR.RENT_ROOM_DE  /* 임대관리방등록일자*/ 
+            ,RR.ROOM_DEL_YN  /* 임대관리방삭제여부*/ 
+            ,RR.USER_NO  /* 임대관리방등록자번호*/ 
+            ,RR.RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+            ,RR.ROOM_NO  /* 방고유번호*/ 
+            ,RR.BLDG_ADDR  /* 도로명주소*/ 
+            ,RR.FLOOR_CNT  /* 전체층수*/ 
+            ,RR.RENT_DONG  /* 해당 동*/ 
+            ,RR.ROOM_FLOOR  /* 해당 층*/ 
+            ,RR.ROOM_UNIT  /* 해당 호수*/ 
+            ,RR.ROOM_BTR_CNT  /* 욕실수*/ 
+            ,RR.DCT_LAD_LNDCGR  /* 토지_지목*/ 
+            ,RR.DCT_LAD_AR  /* 토지_면적*/ 
+            ,RR.BULD_AR  /* 건물_면적*/ 
+            ,RR.BULD_PRPOS  /* 건물_용도*/ 
+            ,RR.BULD_MPRPOS  /* 건물_주용도*/ 
+            ,RR.RENT_AR  /* 임대할부분면적*/ 
+            ,RR.ROOM_TY  /* 방유형*/ 
+            ,RR.ROOM_PARKNG_YN  /* 주차가능여부*/ 
+            ,RR.ROOM_ELVTR_YN  /* 엘리베이터여부*/ 
+            ,RR.UNITY_ATCHMNFL_NO  /* 통합첨부파일번호*/ 
+
+		FROM CNTRCT_RENT CR
+		JOIN (
+		    SELECT  A.ROOM_UNGR_YN  /* 지하여부*/ 
+		            ,A.ROOM_CNT  /* 방 수*/ 
+		            ,A.LIVING_TYPE  /* 거실유형*/ 
+		            ,A.RENT_ROOM_NO  /* 임대관리방등록번호*/ 
+		            ,A.RENT_ROOM_DE  /* 임대관리방등록일자*/ 
+		            ,A.ROOM_DEL_YN  /* 임대관리방삭제여부*/ 
+		            ,A.USER_NO  /* 임대관리방등록자번호*/ 
+		            ,A.RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+		            ,A.ROOM_NO  /* 방고유번호*/ 
+		            ,B.BLDG_ADDR  /* 도로명주소*/ 
+		            ,B.FLOOR_CNT  /* 전체층수*/ 
+		            ,B.RENT_DONG  /* 해당 동*/ 
+		            ,B.ROOM_FLOOR  /* 해당 층*/ 
+		            ,B.ROOM_UNIT  /* 해당 호수*/ 
+		            ,B.ROOM_BTR_CNT  /* 욕실수*/ 
+		            ,B.DCT_LAD_LNDCGR  /* 토지_지목*/ 
+		            ,B.DCT_LAD_AR  /* 토지_면적*/ 
+		            ,B.BULD_AR  /* 건물_면적*/ 
+		            ,B.BULD_PRPOS  /* 건물_용도*/ 
+		            ,B.BULD_MPRPOS  /* 건물_주용도*/ 
+		            ,B.RENT_AR  /* 임대할부분면적*/ 
+		            ,B.ROOM_TY  /* 방유형*/ 
+		            ,B.ROOM_PARKNG_YN  /* 주차가능여부*/ 
+		            ,B.ROOM_ELVTR_YN  /* 엘리베이터여부*/ 
+		            ,B.UNITY_ATCHMNFL_NO  /* 통합첨부파일번호*/ 
+				    FROM RENT_ROOM A LEFT JOIN ROOM B ON A.ROOM_NO = B.ROOM_NO
+				    WHERE A.RENT_BLDG_NO = #{rentRoom.rentBldgNo, jdbcType=VARCHAR}
+				) RR ON CR.RENT_ROOM_NO = RR.RENT_ROOM_NO
+				WHERE CR.CNTRCT_STTS = #{cntrctStts, jdbcType=VARCHAR}
+	</select>
+	
+	<select id="selectRentRoomCntrtList"  parameterType="RentContractVO" resultMap="RentContractResultMap" >
+	SELECT 
+			CR.PRUF_KND  /* 증빙종류*/ 
+			,CR.PRUF_MTHD  /* 증빙방식*/ 
+			,CR.PRUF_DE /* 증빙발행일자*/ 
+			,CR.CNTRCT_STTS  /* 계약상태*/ 
+			,CR.CNTRCT_RENT_NO  /* 임대관리계약정보번호*/ 
+			,CR.CNTRCTR_NM  /* 계약자명*/ 
+			,CR.MBTLNUM  /* 휴대폰번호*/ 
+			,CR.EMAIL_ADRES  /* 이메일주소*/ 
+			,CR.VHCLE_YN  /* 차량보유여부*/ 
+			,CR.ANIMAL_YN  /* 반려동물여부*/ 
+			,CR.CTP_PIC_NAME  /* 계약담당자명*/ 
+			,CR.CTP_PIC_EMAIL  /* 계약담당자이메일주소*/ 
+			,CR.CTP_PIC_MBTLNUM  /* 계약담당자휴대폰번호*/ 
+			,CR.DCT_RENT_AR /* 임대할부분면적*/ 
+			,CR.DCT_CLSF  /* 계약형태분류*/ 
+			,CR.RENT_CND  /* 임대료 납부조건*/ 
+			,TO_CHAR(CR.DCT_BGNG, 'YYYY-MM-DD') DCT_BGNG /* 계약시작일자*/ 
+			,TO_CHAR(CR.DCT_END, 'YYYY-MM-DD') DCT_END  /* 계약만료일자*/ 
+			,CR.CNTRCT_DE  /* 계약정보생성일자*/ 
+			,CR.CTP_VAT_APPLC_YN  /* 부가세적용여부*/ 
+			,CR.GRNTE_AMT/* 보증금*/ 
+			,CR.MHL_AMT /* 임대료*/ 
+			,CR.MANAGECT_AMT /* 관리비*/ 
+			,CR.CTP_RCPMNYER  /* 입금자*/ 
+			,CR.PRUF_NM  /* 증빙구분*/ 
+			,CR.CTP_DEDT_DE /* 납기일자*/ 
+			,CR.MT_RCPMNY_AMT /* 월입금액*/ 
+			,CR.CTP__UPDDE_DT  /* 계약서수정일시*/ 
+			,CR.CTP_DEL_YN  /* 계약서삭제여부*/ 
+			,CR.RENT_ROOM_NO  /* 임대관리방등록번호*/ 
+			,CR.LESSEE_NO  /* 사용자번호*/ 
+            ,RR.ROOM_UNGR_YN  /* 지하여부*/ 
+            ,RR.ROOM_CNT  /* 방 수*/ 
+            ,RR.LIVING_TYPE  /* 거실유형*/ 
+            ,RR.RENT_ROOM_NO  /* 임대관리방등록번호*/ 
+            ,RR.RENT_ROOM_DE  /* 임대관리방등록일자*/ 
+            ,RR.ROOM_DEL_YN  /* 임대관리방삭제여부*/ 
+            ,RR.USER_NO  /* 임대관리방등록자번호*/ 
+            ,RR.RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+            ,RR.ROOM_NO  /* 방고유번호*/ 
+            ,RR.BLDG_ADDR  /* 도로명주소*/ 
+            ,RR.FLOOR_CNT  /* 전체층수*/ 
+            ,RR.RENT_DONG  /* 해당 동*/ 
+            ,RR.ROOM_FLOOR  /* 해당 층*/ 
+            ,RR.ROOM_UNIT  /* 해당 호수*/ 
+            ,RR.ROOM_BTR_CNT  /* 욕실수*/ 
+            ,RR.DCT_LAD_LNDCGR  /* 토지_지목*/ 
+            ,RR.DCT_LAD_AR  /* 토지_면적*/ 
+            ,RR.BULD_AR  /* 건물_면적*/ 
+            ,RR.BULD_PRPOS  /* 건물_용도*/ 
+            ,RR.BULD_MPRPOS  /* 건물_주용도*/ 
+            ,RR.RENT_AR  /* 임대할부분면적*/ 
+            ,RR.ROOM_TY  /* 방유형*/ 
+            ,RR.ROOM_PARKNG_YN  /* 주차가능여부*/ 
+            ,RR.ROOM_ELVTR_YN  /* 엘리베이터여부*/ 
+            ,RR.UNITY_ATCHMNFL_NO  /* 통합첨부파일번호*/ 
+
+		FROM CNTRCT_RENT CR
+		JOIN (
+		    SELECT  A.ROOM_UNGR_YN  /* 지하여부*/ 
+		            ,A.ROOM_CNT  /* 방 수*/ 
+		            ,A.LIVING_TYPE  /* 거실유형*/ 
+		            ,A.RENT_ROOM_NO  /* 임대관리방등록번호*/ 
+		            ,A.RENT_ROOM_DE  /* 임대관리방등록일자*/ 
+		            ,A.ROOM_DEL_YN  /* 임대관리방삭제여부*/ 
+		            ,A.USER_NO  /* 임대관리방등록자번호*/ 
+		            ,A.RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+		            ,A.ROOM_NO  /* 방고유번호*/ 
+		            ,B.BLDG_ADDR  /* 도로명주소*/ 
+		            ,B.FLOOR_CNT  /* 전체층수*/ 
+		            ,B.RENT_DONG  /* 해당 동*/ 
+		            ,B.ROOM_FLOOR  /* 해당 층*/ 
+		            ,B.ROOM_UNIT  /* 해당 호수*/ 
+		            ,B.ROOM_BTR_CNT  /* 욕실수*/ 
+		            ,B.DCT_LAD_LNDCGR  /* 토지_지목*/ 
+		            ,B.DCT_LAD_AR  /* 토지_면적*/ 
+		            ,B.BULD_AR  /* 건물_면적*/ 
+		            ,B.BULD_PRPOS  /* 건물_용도*/ 
+		            ,B.BULD_MPRPOS  /* 건물_주용도*/ 
+		            ,B.RENT_AR  /* 임대할부분면적*/ 
+		            ,B.ROOM_TY  /* 방유형*/ 
+		            ,B.ROOM_PARKNG_YN  /* 주차가능여부*/ 
+		            ,B.ROOM_ELVTR_YN  /* 엘리베이터여부*/ 
+		            ,B.UNITY_ATCHMNFL_NO  /* 통합첨부파일번호*/ 
+				    FROM RENT_ROOM A LEFT JOIN ROOM B ON A.ROOM_NO = B.ROOM_NO
+				    WHERE A.RENT_ROOM_NO = #{rentRoomNo, jdbcType=VARCHAR}
+				) RR ON CR.RENT_ROOM_NO = RR.RENT_ROOM_NO
+				WHERE CR.CNTRCT_STTS = #{cntrctStts, jdbcType=VARCHAR}
+	</select>
+	
+	<select id="selectAllRentContract" parameterType="RentContractVO" resultMap="RentContractResultMap">
+		SELECT 
+			D.RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+			,D.BLDG_DE  /* 임대관리건물등록일자*/ 
+			,D.BLDG_NM  /* 건물명*/ 
+			,D.BLDG_ADDR  /* 도로명주소*/ 
+			,D.BLDG_HOME_CNT  /* 가구수총합*/ 
+			,D.BLDG_DONG  /* 동정보 */ 
+			,D.USER_NO  /* 임대관리방등록자번호*/ 
+			,D.BLDG_SE  /* 건물구분*/ 
+			,D.BLDG_ALL_CNT  /* 총층수*/
+			,A.PRUF_KND  /* 증빙종류*/
+			,A.PRUF_MTHD  /* 증빙방식*/
+			,A.PRUF_DE  /* 증빙발행일자*/ 
+			,(
+               select C.CMMN_CD_NM
+               from CMMN_CODE C
+               where A.CNTRCT_STTS = C.CMMN_CD
+             ) CNTRCT_STTS  /* 계약상태*/ 
+			,A.CNTRCT_RENT_NO  /* 임대관리계약정보번호*/ 
+			,A.CNTRCTR_NM  /* 계약자명*/ 
+			,A.MBTLNUM  /* 휴대폰번호*/ 
+			,A.EMAIL_ADRES  /* 이메일주소*/ 
+			,A.VHCLE_YN  /* 차량보유여부*/ 
+			,A.ANIMAL_YN  /* 반려동물여부*/ 
+			,A.CTP_PIC_NAME  /* 계약담당자명*/ 
+			,A.CTP_PIC_EMAIL  /* 계약담당자이메일주소*/ 
+			,A.CTP_PIC_MBTLNUM  /* 계약담당자휴대폰번호*/ 
+			,A.DCT_RENT_AR  /* 임대할부분면적*/ 
+			,A.DCT_CLSF  /* 계약형태분류*/ 
+			,A.RENT_CND  /* 임대료 납부조건*/ 
+			,TO_CHAR(A.DCT_BGNG, 'YYYY-MM-DD') DCT_BGNG  /* 계약시작일자*/ 
+			,TO_CHAR(A.DCT_END, 'YYYY-MM-DD') DCT_END  /* 계약만료일자*/ 
+			,A.CNTRCT_DE  /* 계약정보생성일자*/ 
+			,A.CTP_VAT_APPLC_YN  /* 부가세적용여부*/ 
+			,A.GRNTE_AMT  /* 보증금*/ 
+			,A.MHL_AMT  /* 임대료*/ 
+			,A.MANAGECT_AMT  /* 관리비*/ 
+			,A.CTP_RCPMNYER  /* 입금자*/ 
+			,A.PRUF_NM  /* 증빙구분*/ 
+			,A.CTP_DEDT_DE  /* 납기일자*/ 
+			,A.MT_RCPMNY_AMT  /* 월입금액*/ 
+			,A.LESSEE_NO  /* 사용자번호*/ 
+			,B.ROOM_NO  /* 방고유번호*/ 
+			,B.FLOOR_CNT  /* 전체층수*/ 
+			,B.RENT_DONG  /* 해당 동*/ 
+			,B.ROOM_FLOOR  /* 해당 층*/ 
+			,B.ROOM_UNIT  /* 해당 호수*/ 
+			,B.ROOM_BTR_CNT  /* 욕실수*/ 
+			,B.DCT_LAD_LNDCGR  /* 토지_지목*/ 
+			,B.DCT_LAD_AR  /* 토지_면적*/ 
+			,B.BULD_AR  /* 건물_면적*/ 
+			,B.BULD_PRPOS  /* 건물_용도*/ 
+			,B.BULD_MPRPOS  /* 건물_주용도*/ 
+			,B.RENT_AR  /* 임대할부분면적*/ 
+			,B.ROOM_TY  /* 방유형*/ 
+			,B.ROOM_PARKNG_YN  /* 주차가능여부*/ 
+			,B.ROOM_ELVTR_YN  /* 엘리베이터여부*/ 
+			,B.UNITY_ATCHMNFL_NO  /* 통합첨부파일번호*/ 
+			,C.ROOM_UNGR_YN  /* 지하여부*/ 
+			,C.ROOM_CNT  /* 방 수*/ 
+			,C.LIVING_TYPE  /* 거실유형*/ 
+			,C.RENT_ROOM_NO  /* 임대관리방등록번호*/ 
+			,C.RENT_ROOM_DE  /* 임대관리방등록일자*/ 
+		
+		
+		FROM CNTRCT_RENT A, ROOM B, RENT_ROOM C, RENT_BLDG D
+		WHERE A.RENT_ROOM_NO = C.RENT_ROOM_NO
+			AND B.ROOM_NO = C.ROOM_NO
+			AND C.RENT_BLDG_NO = D.RENT_BLDG_NO
+			AND D.USER_NO = #{rentRoom.rentBldg.userNo, jdbcType=VARCHAR}
+			AND D.BLDG_DEL_YN = 'N'
+			AND A.CTP_DEL_YN = 'N'
+			AND C.ROOM_DEL_YN='N'
+			AND A.CTP_DEL_YN='N'
+			AND A.CNTRCT_STTS = #{cntrctStts, jdbcType=VARCHAR}
+	</select>
+	
+	<select id="selectRentContract" parameterType="String" resultMap="RentContractResultMap">
+		 	SELECT 
+			D.RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+			,D.BLDG_DE  /* 임대관리건물등록일자*/ 
+			,D.BLDG_NM  /* 건물명*/ 
+			,D.BLDG_ADDR  /* 도로명주소*/ 
+			,D.BLDG_HOME_CNT  /* 가구수총합*/ 
+			,D.BLDG_DONG  /* 동정보 */ 
+			,D.USER_NO  /* 임대관리방등록자번호*/ 
+			,(
+               select C.CMMN_CD_NM
+               from CMMN_CODE C
+               where D.BLDG_SE = C.CMMN_CD
+             ) BLDG_SE  /* 건물구분*/ 
+			,D.BLDG_ALL_CNT  /* 총층수*/
+			,(
+               select C.CMMN_CD_NM
+               from CMMN_CODE C
+               where A.PRUF_KND = C.CMMN_CD
+             ) PRUF_KND  /* 증빙종류*/
+			,(
+               select C.CMMN_CD_NM
+               from CMMN_CODE C
+               where A.PRUF_MTHD = C.CMMN_CD
+             ) PRUF_MTHD  /* 증빙방식*/
+			,A.PRUF_DE  /* 증빙발행일자*/ 
+			,(
+               select C.CMMN_CD_NM
+               from CMMN_CODE C
+               where A.CNTRCT_STTS = C.CMMN_CD
+             ) CNTRCT_STTS  /* 계약상태*/ 
+			,A.CNTRCT_RENT_NO  /* 임대관리계약정보번호*/ 
+			,A.CNTRCTR_NM  /* 계약자명*/ 
+			,A.MBTLNUM /* 휴대폰번호*/ 
+			,A.EMAIL_ADRES  /* 이메일주소*/ 
+			,(
+               select C.CMMN_CD_NM
+               from CMMN_CODE C
+               where A.VHCLE_YN = C.CMMN_CD
+             ) VHCLE_YN  /* 차량보유여부*/ 
+			,(
+               select C.CMMN_CD_NM
+               from CMMN_CODE C
+               where A.ANIMAL_YN = C.CMMN_CD
+             ) ANIMAL_YN  /* 반려동물여부*/ 
+			,A.CTP_PIC_NAME  /* 계약담당자명*/ 
+			,A.CTP_PIC_EMAIL  /* 계약담당자이메일주소*/ 
+			,A.CTP_PIC_MBTLNUM /* 계약담당자휴대폰번호*/ 
+			,A.DCT_RENT_AR	 /* 임대할부분면적*/ 
+			,(
+               select C.CMMN_CD_NM
+               from CMMN_CODE C
+               where A.DCT_CLSF = C.CMMN_CD
+             ) DCT_CLSF  /* 계약형태분류*/ 
+			,(
+               select C.CMMN_CD_NM
+               from CMMN_CODE C
+               where A.RENT_CND  = C.CMMN_CD
+             ) RENT_CND  /* 임대료 납부조건*/ 
+			,TO_CHAR(A.DCT_BGNG, 'YYYY-MM-DD') DCT_BGNG  /* 계약시작일자*/ 
+			,TO_CHAR(A.DCT_END, 'YYYY-MM-DD') DCT_END  /* 계약만료일자*/ 
+			,TO_CHAR(A.CNTRCT_DE, 'YYYY-MM-DD') CNTRCT_DE /* 계약정보생성일자*/
+			,TO_CHAR(A.CTP__UPDDE_DT, 'YYYY-MM-DD') CTP__UPDDE_DT /* 계약서수정일시*/  
+			,(
+               select C.CMMN_CD_NM
+               from CMMN_CODE C
+               where A.CTP_VAT_APPLC_YN  = C.CMMN_CD
+             ) CTP_VAT_APPLC_YN  /* 부가세적용여부*/ 
+			,A.GRNTE_AMT  /* 보증금*/ 
+			,A.MHL_AMT  /* 임대료*/ 
+			,A.MANAGECT_AMT /* 관리비*/
+			,A.CTP_RCPMNYER  /* 입금자*/ 
+			,(
+               select C.CMMN_CD_NM
+               from CMMN_CODE C
+               where A.PRUF_NM = C.CMMN_CD
+             ) PRUF_NM  /* 증빙구분*/ 
+			,A.CTP_DEDT_DE  /* 납기일자*/ 
+			,A.MT_RCPMNY_AMT  /* 월입금액*/ 
+			,A.LESSEE_NO  /* 사용자번호*/ 
+			,B.ROOM_NO  /* 방고유번호*/ 
+			,B.FLOOR_CNT  /* 전체층수*/ 
+			,B.RENT_DONG  /* 해당 동*/ 
+			,B.ROOM_FLOOR  /* 해당 층*/ 
+			,B.ROOM_UNIT  /* 해당 호수*/ 
+			,B.ROOM_BTR_CNT  /* 욕실수*/ 
+			,B.DCT_LAD_LNDCGR  /* 토지_지목*/ 
+			,B.DCT_LAD_AR  /* 토지_면적*/ 
+			,B.BULD_AR  /* 건물_면적*/ 
+			,B.BULD_PRPOS  /* 건물_용도*/ 
+			,B.BULD_MPRPOS  /* 건물_주용도*/ 
+			,B.RENT_AR  /* 임대할부분면적*/ 
+			,B.ROOM_TY  /* 방유형*/ 
+			,B.ROOM_PARKNG_YN  /* 주차가능여부*/ 
+			,(
+               select C.CMMN_CD_NM
+               from CMMN_CODE C
+               where B.ROOM_ELVTR_YN = C.CMMN_CD
+             ) ROOM_ELVTR_YN  /* 엘리베이터여부*/ 
+			,B.UNITY_ATCHMNFL_NO  /* 통합첨부파일번호*/ 
+			,C.ROOM_UNGR_YN  /* 지하여부*/ 
+			,C.ROOM_CNT  /* 방 수*/ 
+			,C.LIVING_TYPE  /* 거실유형*/ 
+			,C.RENT_ROOM_NO  /* 임대관리방등록번호*/ 
+			,C.RENT_ROOM_DE  /* 임대관리방등록일자*/ 
+		
+		
+		FROM CNTRCT_RENT A, ROOM B, RENT_ROOM C, RENT_BLDG D
+		WHERE A.RENT_ROOM_NO = C.RENT_ROOM_NO
+			AND B.ROOM_NO = C.ROOM_NO
+			AND C.RENT_BLDG_NO = D.RENT_BLDG_NO
+			AND A.CNTRCT_RENT_NO = #{cntrctRentNo, jdbcType=VARCHAR}
+			AND D.BLDG_DEL_YN = 'N'
+			AND A.CTP_DEL_YN = 'N'
+			AND C.ROOM_DEL_YN = 'N'
+			AND A.CTP_DEL_YN = 'N'
+	
+	</select>
+	
+	<update id="updateConnectLessee" parameterType="RentContractVO">
+		UPDATE CNTRCT_RENT 
+		SET SECURE_CODE = #{secureCode, jdbcType=VARCHAR}
+		WHERE CNTRCT_RENT_NO =#{cntrctRentNo, jdbcType=VARCHAR}
+	</update>
+	
+	<select id="selectCheckCode" parameterType="String" resultType="String">
+		SELECT CNTRCT_RENT_NO
+		FROM CNTRCT_RENT
+		WHERE SECURE_CODE = #{secureCode, jdbcType=VARCHAR}
+	</select>
+	<update id="updateLesseeNo" parameterType="RentContractVO">
+		UPDATE CNTRCT_RENT 
+		SET LESSEE_NO =  #{lesseeNo, jdbcType=VARCHAR}
+		WHERE SECURE_CODE = #{secureCode, jdbcType=VARCHAR}
+	</update>
+	
+	<update id="updateMidway"  parameterType="RentContractVO">
+	UPDATE CNTRCT_RENT
+	SET CNTRCT_STTS = 'RSTTS03',
+	    MIDWAY_DT = #{midwayDt, jdbcType=DATE}
+	WHERE CNTRCT_RENT_NO = #{cntrctRentNo,jdbcType=VARCHAR}
+	</update>
+	<!--======================== 임대인 메인화면 통계 ==========================-->
+	<!-- 이번달 등록한 계약건 개수 -->
+	<select id="selectThisMonthCnrtCount" parameterType="String">
+	SELECT NVL(COUNT(*), 0)
+	FROM CNTRCT_RENT A, RENT_ROOM B, RENT_BLDG C
+	WHERE A.RENT_ROOM_NO = B.RENT_ROOM_NO
+	AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+	AND TRUNC(CNTRCT_DE, 'MM') = TRUNC(SYSDATE, 'MM')
+	AND C.USER_NO = #{userNo}
+	</select>
+	
+	<!-- 저번달 등록한 계약건 개수 -->
+	<select id="selectPreMonthCnrtCount" parameterType="String">
+	SELECT NVL(COUNT(*), 0)
+	FROM CNTRCT_RENT A, RENT_ROOM B, RENT_BLDG C
+	WHERE A.RENT_ROOM_NO = B.RENT_ROOM_NO
+	AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+	<![CDATA[ 
+	AND A.CNTRCT_DE >= TRUNC(ADD_MONTHS(SYSDATE, -1), 'MM')
+	AND A.CNTRCT_DE < TRUNC(SYSDATE, 'MM')
+	]]> 
+	AND C.USER_NO = #{userNo}
+	</select>
+	
+	<!-- 전체 계약건수 -->
+	<select id="selectCnrtAllCount" parameterType="String">
+	SELECT NVL(COUNT(*), 0)
+	FROM CNTRCT_RENT A, RENT_ROOM B, RENT_BLDG C
+	WHERE A.RENT_ROOM_NO = B.RENT_ROOM_NO
+	AND A.CTP_DEL_YN = 'N'
+	AND C.BLDG_DEL_YN = 'N'
+	AND B.ROOM_DEL_YN = 'N'
+	AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+	AND C.USER_NO = #{userNo}
+	</select>
+	
+	<!-- 현재 입주중인 계약건 개수 -->
+	<select id="selectRSTTS01Count" parameterType="String">
+	SELECT NVL(COUNT(*), 0)
+	FROM CNTRCT_RENT A, RENT_ROOM B, RENT_BLDG C
+	WHERE A.RENT_ROOM_NO = B.RENT_ROOM_NO
+	AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+	AND A.CTP_DEL_YN = 'N'
+	AND C.BLDG_DEL_YN = 'N'
+	AND B.ROOM_DEL_YN = 'N'
+	AND A.CNTRCT_STTS = 'RSTTS01'
+	AND C.USER_NO = #{userNo}
+	</select>
+	
+	<!-- 만료 7일전 계약건 개수 -->
+	<select id="selectBefore7EndCount"  parameterType="String">
+	SELECT NVL(COUNT(*), 0)
+	FROM CNTRCT_RENT A, RENT_ROOM B, RENT_BLDG C
+	WHERE A.RENT_ROOM_NO = B.RENT_ROOM_NO
+	AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+	AND A.CTP_DEL_YN = 'N'
+	AND C.BLDG_DEL_YN = 'N'
+	AND B.ROOM_DEL_YN = 'N'
+	AND DCT_END BETWEEN SYSDATE - 7 AND SYSDATE
+	AND C.USER_NO = #{userNo}
+	</select>
+	
+	<!-- 이번달 만료 계약건 개수 -->
+	<select id="selectThisMonthEndCount" parameterType="String">
+	SELECT NVL(COUNT(*), 0)
+	FROM CNTRCT_RENT A, RENT_ROOM B, RENT_BLDG C
+	WHERE A.RENT_ROOM_NO = B.RENT_ROOM_NO
+	AND A.CTP_DEL_YN = 'N'
+	AND C.BLDG_DEL_YN = 'N'
+	AND B.ROOM_DEL_YN = 'N'
+	AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+	<![CDATA[ 
+	AND A.DCT_END >= TRUNC(SYSDATE, 'MM')
+	AND A.DCT_END < TRUNC(ADD_MONTHS(SYSDATE, 1), 'MM')
+	]]> 
+	AND C.USER_NO = #{userNo}
+	</select>
+	
+	<!-- 계약중인 보증금 총액 -->
+	<select id="selectAllGrnteAmt" parameterType="String">
+	SELECT NVL(SUM(A.GRNTE_AMT), 0)
+	FROM CNTRCT_RENT A, RENT_ROOM B, RENT_BLDG C
+	WHERE A.RENT_ROOM_NO = B.RENT_ROOM_NO
+	AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+	AND A.CNTRCT_STTS = 'RSTTS01'
+	AND A.CTP_DEL_YN = 'N'
+	AND C.BLDG_DEL_YN = 'N'
+	AND B.ROOM_DEL_YN = 'N'
+	AND C.USER_NO = #{userNo}
+	</select>
+	
+	<!-- 계약중인 관리비 총액 -->
+	<select id="selectAllMhlAmt" parameterType="String">
+	SELECT NVL(SUM(A.MHL_AMT), 0)
+	FROM CNTRCT_RENT A, RENT_ROOM B, RENT_BLDG C
+	WHERE A.RENT_ROOM_NO = B.RENT_ROOM_NO
+	AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+	AND A.CNTRCT_STTS = 'RSTTS01'
+	AND A.CTP_DEL_YN = 'N'
+	AND C.BLDG_DEL_YN = 'N'
+	AND B.ROOM_DEL_YN = 'N'
+	AND C.USER_NO =  #{userNo}
+	</select>
+	
+	<!-- 계약중인 임대료 총액 -->
+	<select id="selectAllManagectAmt" parameterType="String">
+	SELECT NVL(SUM(A.MANAGECT_AMT), 0)
+	FROM CNTRCT_RENT A, RENT_ROOM B, RENT_BLDG C
+	WHERE A.RENT_ROOM_NO = B.RENT_ROOM_NO
+	AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+	AND A.CNTRCT_STTS = 'RSTTS01'
+	AND A.CTP_DEL_YN = 'N'
+	AND C.BLDG_DEL_YN = 'N'
+	AND B.ROOM_DEL_YN = 'N'
+	AND C.USER_NO =  #{userNo}
+	</select>
+	
+	<select id="selectEndRoom" parameterType="String">
+	SELECT NVL(COUNT(*), 0)
+	FROM CNTRCT_RENT A, RENT_ROOM B, RENT_BLDG C
+	WHERE A.RENT_ROOM_NO = B.RENT_ROOM_NO
+	AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+	AND A.CTP_DEL_YN = 'N'
+	AND C.BLDG_DEL_YN = 'N'
+	AND B.ROOM_DEL_YN = 'N'
+	<![CDATA[ 
+	AND A.DCT_END >= TRUNC(SYSDATE, 'MM')
+	AND A.DCT_END < TRUNC(ADD_MONTHS(SYSDATE, 1), 'MM')
+	]]> 
+	AND C.RENT_BLDG_NO = #{rentRoom.rentBldg.rentBldgNo, jdbcType=VARCHAR}
+	</select>
+	
+	<select id="selectBuildingGongsil" parameterType="String" resultMap="RentContractResultMap">
+	
+SELECT *
+FROM (
+    SELECT 
+        C.bldg_nm, 
+        B.rent_room_no,
+        D.ROOM_FLOOR,
+        D.ROOM_UNIT,
+        CASE WHEN TRUNC(SYSDATE) - TRUNC(A.DCT_END) > 0 
+             THEN TRUNC(SYSDATE) - TRUNC(A.DCT_END) 
+             ELSE 0 
+        END AS since_end
+    FROM 
+        RENT_ROOM B
+    JOIN 
+        RENT_BLDG C ON B.RENT_BLDG_NO = C.RENT_BLDG_NO
+    LEFT JOIN 
+        CNTRCT_RENT A ON A.RENT_ROOM_NO = B.RENT_ROOM_NO
+    JOIN
+        ROOM D ON B.ROOM_NO = D.ROOM_NO
+    WHERE 
+        C.BLDG_DEL_YN = 'N'
+    AND 
+        B.ROOM_DEL_YN = 'N'
+    AND 
+        B.RENT_BLDG_NO = #{rentRoom.rentBldg.rentBldgNo, jdbcType=VARCHAR}
+    AND
+        A.CNTRCT_STTS != 'RSTTS01'
+    AND
+    	A.CNTRCT_STTS != 'RSTTS02'
+   
+    ORDER BY
+        since_end DESC
+)
+	
+	</select>
+	<select id="selectBuildingGongsil2" parameterType="String" resultMap="RentContractResultMap">
+	SELECT B.RENT_ROOM_NO
+	FROM RENT_ROOM B
+	JOIN RENT_BLDG C ON B.RENT_BLDG_NO = C.RENT_BLDG_NO
+	LEFT JOIN CNTRCT_RENT A ON A.RENT_ROOM_NO = B.RENT_ROOM_NO
+	WHERE C.RENT_BLDG_NO =  #{rentRoom.rentBldg.rentBldgNo, jdbcType=VARCHAR}
+	AND A.CNTRCT_RENT_NO IS NULL
+</select>
+
+	<select id="selectBuildingGongsil3" parameterType="RentContractVO" resultMap="RentContractResultMap">
+	 SELECT 
+        C.bldg_nm, 
+        B.rent_room_no,
+        D.ROOM_FLOOR,
+        D.ROOM_UNIT,
+        CASE WHEN TRUNC(SYSDATE) - TRUNC(A.DCT_END) > 0 
+             THEN TRUNC(SYSDATE) - TRUNC(A.DCT_END) 
+             ELSE 0 
+        END AS since_end
+    FROM 
+        RENT_ROOM B
+    JOIN 
+        RENT_BLDG C ON B.RENT_BLDG_NO = C.RENT_BLDG_NO
+    LEFT JOIN 
+        CNTRCT_RENT A ON A.RENT_ROOM_NO = B.RENT_ROOM_NO
+    JOIN
+        ROOM D ON B.ROOM_NO = D.ROOM_NO
+    WHERE 
+        C.BLDG_DEL_YN = 'N'
+    AND 
+        B.ROOM_DEL_YN = 'N'
+    AND 
+        B.RENT_BLDG_NO =  #{rentRoom.rentBldg.rentBldgNo, jdbcType=VARCHAR}
+        AND 
+        B.RENT_ROOM_NO =  #{rentRoom.rentRoomNo, jdbcType=VARCHAR}
+    AND
+        A.CNTRCT_STTS != 'RSTTS01'
+    AND
+    	A.CNTRCT_STTS != 'RSTTS02'   
+    </select>
+	<select id="selectBuildingGongsil4" parameterType="RentContractVO" resultMap="RentContractResultMap">
+	 SELECT B.RENT_ROOM_NO
+	FROM RENT_ROOM B
+	JOIN RENT_BLDG C ON B.RENT_BLDG_NO = C.RENT_BLDG_NO
+	LEFT JOIN CNTRCT_RENT A ON A.RENT_ROOM_NO = B.RENT_ROOM_NO
+	WHERE C.RENT_BLDG_NO =  #{rentRoom.rentBldg.rentBldgNo, jdbcType=VARCHAR}
+    AND B.RENT_ROOM_NO = #{rentRoom.rentRoomNo, jdbcType=VARCHAR}
+	AND A.CNTRCT_RENT_NO IS NULL  
+    </select>
+	
+</mapper>

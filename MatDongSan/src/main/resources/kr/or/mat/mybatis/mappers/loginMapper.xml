@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.login.mapper.LoginMapper">
+
+	<!-- principal에 저장될 로그인 user정보 select -->
+	<select id="selectUserForAuth" resultType="AuthUserVO" parameterType="string">
+	 SELECT
+			USER_NO, USER_NM, USER_ID, USER_PW, 
+			USER_EMAIL, USER_MBTLNUM, USER_SEXDSTN, USER_BIR, 
+			USER_CREAT_ON, USER_LAST_LOGIN_DE, USER_RENT_YN,
+			USER_SE, USER_DEL_YN, UNITY_ATCHMNFL_NO
+	  FROM USERS
+	 WHERE USER_ID = #{userId,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="selectUser" resultType="AuthUserVO" parameterType="string">
+		SELECT  USER_NO, USER_NM, USER_ID, USER_PW, 
+			USER_EMAIL, USER_MBTLNUM, USER_SEXDSTN, USER_BIR, 
+			USER_CREAT_ON, USER_LAST_LOGIN_DE, USER_RENT_YN, 
+			USER_SE, USER_DEL_YN, UNITY_ATCHMNFL_NO                                    
+		FROM USERS                   
+		WHERE USER_ID = #{userId,jdbcType=VARCHAR}                      
+	</select>
+	
+</mapper>

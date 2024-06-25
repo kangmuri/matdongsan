@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.lessee.payData.mapper.PayDataMapper">
+	<resultMap type="PayDataVO" id="payDataMap" autoMapping="true">
+		<id property="payNo" column="PAY_NO"/>
+		<association property="cntrctRent" javaType="CntrctRentVO" autoMapping="true">
+			<association property="rentRoom" javaType="RentRoomVO" autoMapping="true">
+				<association property="room" javaType="RoomVO" autoMapping="true"/>
+				<association property="rentBldg" javaType="RentBldgVO" autoMapping="true"/>
+			</association>
+		</association>
+	</resultMap>
+	
+	<sql id="searchFrag">
+		<trim prefix="AND" prefixOverrides="AND">
+			<if test="not detailConditions.empty">
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.rentBldgNo)">
+					AND INSTR(RENT_BLDG_NO, #{detailConditions.rentBldgNo}) > 0
+				</if>
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.searchWord)">
+					AND INSTR(BL_NM, #{detailConditions.searchWord}) > 0
+				</if>
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.searchWord)">
+					AND INSTR(BL_NM, #{detailConditions.searchWord}) > 0
+				</if>
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.payData) and @org.apache.commons.lang3.StringUtils@equals(detailConditions.payData,'dedtDe')
+				and @org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.minDt) and @org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.maxDt)">
+					AND DEDT_DE BETWEEN TO_DATE(#{detailConditions.minDt},'YYYY/MM/DD') AND TO_DATE(#{detailConditions.maxDt},'YYYY/MM/DD')
+				</if>
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.payData) and @org.apache.commons.lang3.StringUtils@equals(detailConditions.payData,'payDe')
+				and @org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.minDt) and @org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.maxDt)">
+					AND PAY_DE BETWEEN TO_DATE(#{detailConditions.minDt},'YYYY/MM/DD') AND TO_DATE(#{detailConditions.maxDt},'YYYY/MM/DD')
+				</if>
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.payStts)">
+					AND INSTR(PAY_STTS, #{detailConditions.payStts}) > 0
+				</if>
+			</if>
+		</trim>
+	</sql>
+	
+	<select id="selectRentBldgList" resultMap="payDataMap" parameterType="string">
+      SELECT RENT_ROOM.RENT_BLDG_NO, BLDG_NM
+      FROM RENT_ROOM RIGHT OUTER JOIN CNTRCT_RENT ON(RENT_ROOM.RENT_ROOM_NO =  CNTRCT_RENT.RENT_ROOM_NO)
+                     INNER JOIN RENT_BLDG ON(RENT_ROOM.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+      WHERE LESSEE_NO = #{lesseeNo}
+	</select>
+	<select id="selectTotalRecord" resultType="int" parameterType="kr.or.mat.paging.PaginationInfo"> <!-- 모든 레코드 -->
+	WITH ROOM_VIEW AS(
+            SELECT RENT_ROOM.RENT_BLDG_NO AS RENT_BLDG_NO
+                   ,RENT_ROOM.RENT_ROOM_NO AS RENT_ROOM_NO
+                   ,BLDG_NM
+                   ,ROOM_UNIT
+            FROM RENT_ROOM INNER JOIN RENT_BLDG ON(RENT_ROOM.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+                           INNER JOIN ROOM ON(RENT_ROOM.ROOM_NO = ROOM.ROOM_NO)
+         )
+         SELECT COUNT(*)
+		    FROM CNTRCT_RENT LEFT OUTER JOIN PAY_DATA ON(CNTRCT_RENT.CNTRCT_RENT_NO = PAY_DATA.CNTRCT_RENT_NO)
+		                     INNER JOIN ROOM_VIEW ON(CNTRCT_RENT.RENT_ROOM_NO = ROOM_VIEW.RENT_ROOM_NO)
+		    WHERE CTP_DEL_YN = 'N' AND PAY_DEL_YN = 'N'
+                  AND LESSEE_NO = #{detailConditions.lesseeNo, jdbcType=VARCHAR} 
+			<include refid="searchFrag" />
+	</select>
+	
+	<select id="selectPayDataList" resultMap="payDataMap" parameterType="kr.or.mat.paging.PaginationInfo">
+	    SELECT B.*
+		FROM
+		 	(SELECT ROWNUM RNUM, A.*   
+		    FROM(
+		    WITH ROOM_VIEW AS(
+            SELECT RENT_ROOM.RENT_BLDG_NO AS RENT_BLDG_NO
+                   ,RENT_ROOM.RENT_ROOM_NO AS RENT_ROOM_NO
+                   ,BLDG_NM
+                   ,ROOM_UNIT
+                   ,ROOM_FLOOR
+            FROM RENT_ROOM INNER JOIN RENT_BLDG ON(RENT_ROOM.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+                           INNER JOIN ROOM ON(RENT_ROOM.ROOM_NO = ROOM.ROOM_NO)
+         )
+         SELECT 
+			    CNTRCT_RENT.CNTRCT_RENT_NO as CNTRCT_RENT_NO
+	           ,CNTRCTR_NM
+	           ,MBTLNUM
+	           ,EMAIL_ADRES
+	           ,CTP_PIC_NAME
+	           ,PAY_NO
+	           ,BL_NM
+	           ,RQEST_AMT
+	           ,TO_CHAR(DEDT_DE,'YYYY/MM/DD') as DEDT_DE
+	           ,TO_CHAR(PAY_DE,'YYYY/MM/DD') as PAY_DE
+	           ,
+	           (select cmmn_cd_nm
+	            from cmmn_code
+	            where pay_stts = cmmn_cd
+	            ) PAY_STTS
+	            ,rent_bldg_no
+                ,BLDG_NM
+                ,ROOM_UNIT
+                ,ROOM_FLOOR
+		    FROM CNTRCT_RENT RIGHT OUTER JOIN PAY_DATA ON(CNTRCT_RENT.CNTRCT_RENT_NO = PAY_DATA.CNTRCT_RENT_NO)
+		                     INNER JOIN ROOM_VIEW ON(CNTRCT_RENT.RENT_ROOM_NO = ROOM_VIEW.RENT_ROOM_NO)
+		    WHERE CTP_DEL_YN = 'N' AND PAY_DEL_YN = 'N'
+                  AND LESSEE_NO = #{detailConditions.lesseeNo, jdbcType=VARCHAR} 
+	            <include refid="searchFrag" />
+	            ORDER BY PAY_NO 
+			    ) A
+		) B
+		<![CDATA[ 
+			WHERE RNUM  >= #{firstRecord} AND RNUM <= #{lastRecord}
+		]]> 
+	</select>
+	<select id="selectPayData" resultMap="payDataMap" parameterType="string">
+	WITH ROOM_VIEW AS(
+	SELECT *
+	FROM RENT_ROOM INNER JOIN ROOM ON(RENT_ROOM.ROOM_NO = ROOM.ROOM_NO)
+	               INNER JOIN RENT_BLDG ON(RENT_ROOM.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+	WHERE RENT_ROOM.ROOM_DEL_YN = 'N' AND ROOM_DEL_YN = 'N'
+	)
+	SELECT managect_amt
+           ,ctp_dedt_de
+           ,cntrctr_nm
+           ,mbtlnum
+           ,email_adres
+           ,ctp_vat_applc_yn
+           ,mt_rcpmny_amt
+           ,bl_nm
+           ,rqest_amt
+           ,to_char(dedt_de,'YYYY/MM/DD') as dedt_de
+           ,(select cmmn_cd_nm
+            from cmmn_code
+            where pay_stts = cmmn_cd
+            ) PAY_STTS
+           ,room_unit
+           ,bldg_nm
+           ,mhl_amt
+           ,to_char(pay_de,'YYYY/MM/DD') as pay_de
+           ,(SELECT CMMN_CD_NM 
+             FROM CMMN_CODE
+             WHERE CMMN_CD = CNTRCT_RENT.PRUF_NM ) PRUF_NM
+           ,(SELECT CMMN_CD_NM 
+             FROM CMMN_CODE
+             WHERE CMMN_CD = CNTRCT_RENT.PRUF_KND ) PRUF_KND
+           ,(SELECT CMMN_CD_NM 
+             FROM CMMN_CODE
+             WHERE CMMN_CD = CNTRCT_RENT.PRUF_MTHD ) PRUF_MTHD
+	FROM CNTRCT_RENT RIGHT OUTER JOIN PAY_DATA ON(CNTRCT_RENT.CNTRCT_RENT_NO = PAY_DATA.CNTRCT_RENT_NO)
+	                 INNER JOIN ROOM_VIEW ON(CNTRCT_RENT.RENT_ROOM_NO = ROOM_VIEW.RENT_ROOM_NO)
+	WHERE CTP_DEL_YN = 'N' AND PAY_NO = #{payNo}
+	</select>
+</mapper>

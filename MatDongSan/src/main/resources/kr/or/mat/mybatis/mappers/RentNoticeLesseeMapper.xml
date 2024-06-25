@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.rentNotice.mapper.RentNoticeMapper">
+	<resultMap type="RentNoticeVO" id="noticeMap" autoMapping="true">
+		<id property="noticeNo" column="NOTICE_NO"/>
+		<association property="bldgs" javaType="RentBldgLesseeVO" autoMapping="true"/>
+		<association property="users" javaType="UserVO" autoMapping="true">
+			<collection property="cntrctList" ofType="CntrctRentVO" autoMapping="true"/>
+		</association>
+	</resultMap>
+	
+	<sql id="searchFrag">
+		<trim prefix="AND" prefixOverrides="AND">
+			<if test="not detailConditions.empty">
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.rentBldgNo)">
+					AND INSTR(RENT_BLDG_NO, #{detailConditions.rentBldgNo}) > 0
+				</if>
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.noticeSj)">
+					AND INSTR(NOTICE_SJ, #{detailConditions.noticeSj}) > 0
+				</if>
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.minDt) and @org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.maxDt)">
+					AND NOTICE_DT BETWEEN TO_DATE(#{detailConditions.minDt},'YYYY/MM/DD') AND TO_DATE(#{detailConditions.maxDt},'YYYY/MM/DD')
+				</if>
+			</if>
+		</trim>
+	</sql>
+
+	<select id="selectTotalRecord" resultType="int" parameterType="kr.or.mat.paging.PaginationInfo">
+		WITH BLDG_VIEW AS(
+			SELECT *
+			FROM RENT_BLDG LEFT OUTER JOIN RENT_ROOM ON(RENT_ROOM.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+			               RIGHT OUTER JOIN RENT_NOTICE ON(RENT_BLDG.RENT_BLDG_NO = RENT_NOTICE.RENT_BLDG_NO)
+			               INNER JOIN USERS ON(RENT_BLDG.USER_NO = USERS.USER_NO)
+		)
+			SELECT COUNT(*)
+			FROM CNTRCT_RENT INNER JOIN BLDG_VIEW ON(CNTRCT_RENT.RENT_ROOM_NO = BLDG_VIEW.RENT_ROOM_NO)
+			WHERE LESSEE_NO = #{detailConditions.lesseeNo, jdbcType=VARCHAR}
+				  AND NOTICE_DEL_YN = 'N'
+	    <include refid="searchFrag"/>
+	</select>
+	
+	<select id="selectRentBldgList" resultMap="noticeMap" parameterType="String">
+	WITH BLDG AS(
+	 SELECT BLDG_NM,
+	  		RENT_BLDG.RENT_BLDG_NO AS RENT_BLDG_NO,
+	  		RENT_ROOM_NO
+	 FROM RENT_ROOM RIGHT OUTER JOIN RENT_BLDG ON(RENT_ROOM.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+	)
+	SELECT BLDG_NM,
+		   RENT_BLDG_NO
+	FROM CNTRCT_RENT INNER JOIN USERS ON(LESSEE_NO = USER_NO)
+	                 INNER JOIN BLDG ON(CNTRCT_RENT.RENT_ROOM_NO = BLDG.RENT_ROOM_NO)
+	WHERE LESSEE_NO = #{lesseeNo}
+	</select>
+	
+	<select id="selectListRentNotice" resultMap="noticeMap" parameterType="kr.or.mat.paging.PaginationInfo">
+	SELECT B.*
+	FROM
+	       (SELECT ROWNUM RNUM, A.*
+			FROM(
+					WITH BLDG_VIEW AS(
+					SELECT RENT_BLDG_NO
+                           ,RENT_ROOM_NO
+                           ,BLDG_NM
+                           ,RENT_BLDG.USER_NO AS USER_NO
+                           ,USER_NM
+                           ,USER_ID
+                           ,NOTICE_NO
+                           ,NOTICE_SJ
+                           ,NOTICE_CN
+                           ,NOTICE_DT
+                           ,NOTICE_UPDDE_DT
+                           ,NOTICE_DEL_DT
+                           ,NOTICE_DEL_YN
+                           ,RENT_NOTICE.UNITY_ATCHMNFL_NO AS UNITY_ATCHMNFL_NO
+                           ,NOTICE_CNT
+					FROM RENT_BLDG LEFT OUTER JOIN RENT_ROOM ON(RENT_ROOM.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+					               RIGHT OUTER JOIN RENT_NOTICE ON(RENT_BLDG.RENT_BLDG_NO = RENT_NOTICE.RENT_BLDG_NO)
+					               INNER JOIN USERS ON(RENT_BLDG.USER_NO = USERS.USER_NO)
+					)
+					SELECT CNTRCT_RENT.LESSEE_NO AS LESSEE_NO
+                           ,RENT_BLDG_NO
+                           ,CNTRCT_RENT.RENT_ROOM_NO AS RENT_ROOM_NO
+                           ,BLDG_NM
+                           ,BLDG_VIEW.USER_NO AS USER_NO
+                           ,USER_NM
+                           ,USER_ID
+                           ,NOTICE_NO
+                           ,NOTICE_SJ
+                           ,CASE 
+			                   WHEN LENGTH(NOTICE_CN) > 20 THEN SUBSTR(NOTICE_CN, 1, 20) || '...'
+			                   ELSE NOTICE_CN
+			                END AS NOTICE_CN
+                           ,NOTICE_DT
+                           ,NOTICE_UPDDE_DT
+                           ,NOTICE_DEL_DT
+                           ,NOTICE_DEL_YN
+                           ,BLDG_VIEW.UNITY_ATCHMNFL_NO AS UNITY_ATCHMNFL_NO
+                           ,NOTICE_CNT
+					FROM CNTRCT_RENT INNER JOIN BLDG_VIEW ON(CNTRCT_RENT.RENT_ROOM_NO = BLDG_VIEW.RENT_ROOM_NO)
+					WHERE LESSEE_NO = #{detailConditions.lesseeNo, jdbcType=VARCHAR}
+                    AND NOTICE_DEL_YN = 'N' 
+					 <include refid="searchFrag"/>
+				) A
+		 ) B
+ 		<![CDATA[ 
+			WHERE RNUM  >= #{firstRecord} AND RNUM <= #{lastRecord} 
+		]]> 
+		
+	</select>
+	
+	<select id="selectRentNotice" resultMap="noticeMap" parameterType="RentNoticeVO">
+		 SELECT NOTICE_NO
+        		,RENT_NOTICE.RENT_BLDG_NO AS RENT_BLDG_NO
+		        ,NOTICE_SJ
+		        ,NOTICE_CN
+		        ,NOTICE_DT
+		        ,NOTICE_UPDDE_DT
+		        ,NOTICE_DEL_DT
+		        ,NOTICE_DEL_YN
+		        ,NOTICE_CNT
+		        ,RENT_NOTICE.USER_NO AS USER_NO
+                ,BLDG_NM
+                ,USER_NM
+		FROM RENT_NOTICE INNER JOIN RENT_BLDG ON(RENT_NOTICE.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+						 INNER JOIN USERS ON(RENT_NOTICE.USER_NO = USERS.USER_NO)
+		WHERE NOTICE_NO = #{noticeNo}
+	</select>
+</mapper>

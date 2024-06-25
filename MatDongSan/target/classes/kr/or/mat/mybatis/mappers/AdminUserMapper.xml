@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.admin.mapper.AdminUserMapper">
+<!-- 
+	파일명 : AdminUserMapper.xml
+	설 명 : 관리자 회원관리를 위한 mapper파일
+	작성자 : 한요한
+	작성일 : 2024. 05. 27
+	최종 수정일 : 2024. 05. 27
+-->
+	<sql id="searchFrag">
+		<where>        
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(simpleCondition.searchWord)">
+				<choose>
+					<when test="simpleCondition.searchType eq 'userId'">
+						INSTR(USER_ID, #{simpleCondition.searchWord}) > 0 
+					</when>
+					<when test="simpleCondition.searchType eq 'userNm'">
+						INSTR(USER_NM, #{simpleCondition.searchWord}) > 0 
+					</when>
+					<otherwise>
+						INSTR(USER_ID, #{simpleCondition.searchWord}) > 0
+						OR INSTR(USER_NM, #{simpleCondition.searchWord}) > 0
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+	</sql>
+
+	<!-- 회원 전체(검색)페이지 수  -->
+	<select id="selectTotalRecord" resultType="int" parameterType="kr.or.mat.paging.PaginationInfo">
+		SELECT COUNT(*)
+		FROM USERS
+		<include refid="searchFrag"/>
+	</select>
+	
+	<!-- 회원 전체(검색)조회 -->
+	<select id="selectAdminUserList" resultType="AdminUserVO" parameterType="kr.or.mat.paging.PaginationInfo">
+		SELECT B.*
+		FROM(
+			SELECT ROWNUM RNUM, A.*
+			FROM(
+				SELECT
+				     USER_NO
+					,USER_NM
+					,USER_ID
+					,USER_PW
+					,USER_EMAIL
+					,USER_MBTLNUM
+					,USER_SEXDSTN
+					,USER_BIR
+					,USER_CREAT_ON
+					,USER_LAST_LOGIN_DE
+					,USER_RENT_YN
+					,USER_SE
+					,USER_DEL_YN
+					,A.UNITY_ATCHMNFL_NO
+                    ,B.WEB_PATH
+				FROM USERS A LEFT JOIN TB_ATTACH_FILE B ON(A.UNITY_ATCHMNFL_NO = B.UNITY_ATCHMNFL_NO)
+				<include refid="searchFrag"/>
+			   ORDER BY USER_NO DESC
+			) A
+		) B
+		<![CDATA[ 
+			WHERE RNUM  >= #{firstRecord} AND RNUM <= #{lastRecord} AND USER_DEL_YN = 'N' AND USER_SE = 'ROLE_USER'
+		]]>   
+	</select>
+
+
+
+<!-- 해당 회원의 상세 정보를 조회하는 쿼리(이미지 포함) -->
+<select id="selectAdminUser2" parameterType="String" resultType="AdminUserVO">
+	SELECT
+         USER_NO
+        ,USER_NM
+        ,USER_ID
+        ,USER_PW
+        ,USER_EMAIL
+        ,USER_MBTLNUM
+        ,USER_SEXDSTN
+        ,USER_BIR
+        ,USER_CREAT_ON
+        ,USER_LAST_LOGIN_DE
+        ,USER_RENT_YN
+        ,USER_SE
+        ,USER_DEL_YN
+        ,A.UNITY_ATCHMNFL_NO
+        ,WEB_PATH
+	  FROM USERS A JOIN TB_ATTACH_FILE B ON (USER_NO = REG_USER_ID)
+	 WHERE USER_NO = #{userNo}
+</select>
+
+<!-- 해당 회원의 상세 정보를 조회하는 쿼리 -->
+<select id="selectAdminUser" parameterType="String" resultType="AdminUserVO">
+	SELECT
+         USER_NO
+        ,USER_NM
+        ,USER_ID
+        ,USER_PW
+        ,USER_EMAIL
+        ,USER_MBTLNUM
+        ,USER_SEXDSTN
+        ,USER_BIR
+        ,USER_CREAT_ON
+        ,USER_LAST_LOGIN_DE
+        ,USER_RENT_YN
+        ,USER_SE
+        ,USER_DEL_YN
+        ,UNITY_ATCHMNFL_NO
+	  FROM USERS 
+	 WHERE USER_NO = #{userNo}
+</select>
+
+<!-- 해당 회원을 탈퇴처리하는 쿼리 -->
+<delete id="deleteAdminUser" parameterType="String">
+	UPDATE USERS
+       SET 
+			USER_DEL_YN='Y'
+     WHERE  
+ 			USER_NO= #{userNo}
+</delete>
+	
+	
+</mapper>

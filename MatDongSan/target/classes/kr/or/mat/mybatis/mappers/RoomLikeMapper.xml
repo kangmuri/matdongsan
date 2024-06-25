@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.room.mapper.RoomLikeMapper">
+	
+	
+	
+	<insert id="insertRoomLike" parameterType="RoomLikeVO">
+		<selectKey keyProperty="roomLikeNo" resultType="String" order="BEFORE">
+  			SELECT 'RL' || TO_CHAR(SYSDATE, 'YYMMDD') || TO_CHAR(roomLike_seq.NEXTVAL, 'FM000')
+  			FROM DUAL
+		</selectKey>
+		INSERT INTO ROOM_LIKE (ROOM_DELNG_NO, USER_NO, ROOM_LIKE_NO) 
+		VALUES (
+			#{roomDelngNo, jdbcType=VARCHAR}
+			, #{userNo, jdbcType=VARCHAR}
+			, #{roomLikeNo, jdbcType=VARCHAR}
+			)
+	</insert>
+	
+	<delete id="deleteRoomLike" parameterType="String">
+		DELETE 
+		FROM ROOM_LIKE
+		WHERE ROOM_LIKE_NO = #{roomLikeNo, jdbcType=VARCHAR}
+	</delete>
+	
+	<select id="selectRoomLike" parameterType="RoomLikeVO">
+		SELECT ROOM_LIKE_NO
+		FROM ROOM_LIKE
+		WHERE ROOM_DELNG_NO = #{roomDelngNo, jdbcType=VARCHAR}
+ 		AND USER_NO = #{userNo, jdbcType=VARCHAR}
+	</select>
+</mapper>

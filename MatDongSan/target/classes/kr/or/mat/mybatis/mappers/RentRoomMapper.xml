@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.rentRoom.mapper.RentRoomMapper">
+
+<resultMap type="RentRoomVO" id="RentRoomResultMap" autoMapping="true">
+		<id property="rentRoomNo" column="RENT_ROOM_NO"/>
+			
+		<association property="room" javaType="RoomVO" autoMapping="true">
+			  <id property="roomNo" column="ROOM_NO"/>
+	        <collection property="tbAttachFileList" ofType="TbAttachFileVO" autoMapping="true"/>
+	        <collection property="roomLvlhList" ofType="RoomLvlhVO" autoMapping="true"/>
+		</association>
+		<association property="rentBldg" javaType="RentBldgVO" autoMapping="true">
+		</association>
+		<collection property="rentContractList" ofType="RentContractVO" autoMapping="true">
+			<id property="cntrctRentNo" column="CNTRCT_RENT_NO"/>
+		</collection>
+		
+</resultMap>
+
+<select id="selectRentRoom" parameterType="String" resultMap="RentRoomResultMap">
+	SELECT 
+		ROOM.ROOM_NO  /* 방고유번호*/ 
+		,ROOM.BLDG_ADDR  /* 도로명주소*/ 
+		,ROOM.REGION_1DEPTH_NM  /* 지역 1 Depth, 시도 단위*/ 
+		,ROOM.REGION_2DEPTH_NM  /* 지역 2 Depth, 구 단위*/ 
+		,ROOM.REGION_3DEPTH_NM  /* 지역 3 Depth, 동 단위*/ 
+		,ROOM.BUN  /* 번*/ 
+		,ROOM.JI  /* 지*/ 
+		,ROOM.H_CODE  /* 행정코드*/ 
+		,ROOM.B_CODE  /* 법정코드*/ 
+		,ROOM.X  /* 경도*/ 
+		,ROOM.Y  /* 위도*/ 
+		,ROOM.FLOOR_CNT  /* 전체층수*/ 
+		,ROOM.RENT_DONG  /* 해당 동*/ 
+		,ROOM.ROOM_FLOOR  /* 해당 층*/ 
+		,ROOM.ROOM_UNIT  /* 해당 호수*/ 
+		,ROOM.ROOM_BTR_CNT  /* 욕실수*/ 
+		,ROOM.DCT_LAD_LNDCGR  /* 토지_지목*/ 
+		,ROOM.DCT_LAD_AR  /* 토지_면적*/ 
+		,ROOM.BULD_AR  /* 건물_면적*/ 
+		,ROOM.BULD_PRPOS  /* 건물_용도*/ 
+		,ROOM.BULD_MPRPOS  /* 건물_주용도*/ 
+		,ROOM.RENT_AR  /* 임대할부분면적*/ 
+		,ROOM.ROOM_TY  /* 방유형*/ 
+		,ROOM.ROOM_PARKNG_YN  /* 주차가능여부*/ 
+		,ROOM.ROOM_ELVTR_YN  /* 엘리베이터여부*/ 
+		,ROOM.UNITY_ATCHMNFL_NO  /* 통합첨부파일번호*/ 
+		,ROOM.USER_NO  /* 방등록자번호*/  
+		
+		,RENT_ROOM.ROOM_UNGR_YN  /* 지하여부*/ 
+		,RENT_ROOM.ROOM_CNT  /* 방 수*/ 
+		,RENT_ROOM.LIVING_TYPE  /* 거실유형*/ 
+		,RENT_ROOM.RENT_ROOM_NO  /* 임대관리방등록번호*/ 
+		,RENT_ROOM.RENT_ROOM_DE  /* 임대관리방등록일자*/ 
+		,RENT_ROOM.ROOM_DEL_YN  /* 임대관리방삭제여부*/ 
+		,RENT_ROOM.USER_NO  /* 임대관리방등록자번호*/ 
+		,RENT_ROOM.RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+		,RENT_ROOM.ROOM_NO  /* 방고유번호*/ 
+		
+		
+		
+	FROM RENT_ROOM
+	LEFT JOIN ROOM ON ROOM.ROOM_NO = RENT_ROOM.ROOM_NO
+	WHERE RENT_ROOM.RENT_ROOM_NO = #{rentRoomNo, jdbcType=VARCHAR}
+</select>
+
+<select id="selectRentRoomList" parameterType="String" resultMap="RentRoomResultMap">
+	SELECT 
+		ROOM.ROOM_NO  /* 방고유번호*/ 
+		,ROOM.BLDG_ADDR  /* 도로명주소*/ 
+		,ROOM.REGION_1DEPTH_NM  /* 지역 1 Depth, 시도 단위*/ 
+		,ROOM.REGION_2DEPTH_NM  /* 지역 2 Depth, 구 단위*/ 
+		,ROOM.REGION_3DEPTH_NM  /* 지역 3 Depth, 동 단위*/ 
+		,ROOM.BUN  /* 번*/ 
+		,ROOM.JI  /* 지*/ 
+		,ROOM.H_CODE  /* 행정코드*/ 
+		,ROOM.B_CODE  /* 법정코드*/ 
+		,ROOM.X  /* 경도*/ 
+		,ROOM.Y  /* 위도*/ 
+		,ROOM.FLOOR_CNT  /* 전체층수*/ 
+		,ROOM.RENT_DONG  /* 해당 동*/ 
+		,ROOM.ROOM_FLOOR  /* 해당 층*/ 
+		,ROOM.ROOM_UNIT  /* 해당 호수*/ 
+		,ROOM.ROOM_BTR_CNT  /* 욕실수*/ 
+		,ROOM.DCT_LAD_LNDCGR  /* 토지_지목*/ 
+		,ROOM.DCT_LAD_AR  /* 토지_면적*/ 
+		,ROOM.BULD_AR  /* 건물_면적*/ 
+		,ROOM.BULD_PRPOS  /* 건물_용도*/ 
+		,ROOM.BULD_MPRPOS  /* 건물_주용도*/ 
+		,ROOM.RENT_AR  /* 임대할부분면적*/ 
+		,ROOM.ROOM_TY  /* 방유형*/ 
+		,ROOM.ROOM_PARKNG_YN  /* 주차가능여부*/ 
+		,ROOM.ROOM_ELVTR_YN  /* 엘리베이터여부*/ 
+		,ROOM.UNITY_ATCHMNFL_NO  /* 통합첨부파일번호*/ 
+		,ROOM.USER_NO  /* 방등록자번호*/  
+		,RENT_ROOM.GONSIL /* 공실 여부 */
+		,RENT_ROOM.ROOM_UNGR_YN  /* 지하여부*/ 
+		,RENT_ROOM.ROOM_CNT  /* 방 수*/ 
+		,RENT_ROOM.LIVING_TYPE  /* 거실유형*/ 
+		,RENT_ROOM.RENT_ROOM_NO  /* 임대관리방등록번호*/ 
+		,RENT_ROOM.RENT_ROOM_DE  /* 임대관리방등록일자*/ 
+		,RENT_ROOM.ROOM_DEL_YN  /* 임대관리방삭제여부*/ 
+		,RENT_ROOM.USER_NO  /* 임대관리방등록자번호*/ 
+		,RENT_ROOM.RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+		,RENT_ROOM.ROOM_NO  /* 방고유번호*/ 
+	FROM RENT_ROOM
+	LEFT JOIN ROOM ON ROOM.room_no = RENT_ROOM.ROOM_NO
+	WHERE RENT_ROOM.RENT_BLDG_NO = #{rentBldgNo, jdbcType=VARCHAR}
+	AND RENT_ROOM.ROOM_DEL_YN  = 'N'
+</select>
+
+
+	<insert id="insertRentRoom" parameterType="RentRoomVO">
+		<selectKey keyProperty="rentRoomNo" resultType="String"
+			order="BEFORE">
+			
+			SELECT 'RT' || TO_CHAR(SYSDATE, 'YYMMDD') || TO_CHAR(RENTROOM_SEQ.NEXTVAL, 'FM000')
+  			FROM DUAL
+		</selectKey>
+			INSERT INTO RENT_ROOM (
+					RENT_ROOM_NO
+					,USER_NO
+					,RENT_BLDG_NO
+					,ROOM_NO
+					,ROOM_UNGR_YN
+					,ROOM_CNT
+					,LIVING_TYPE
+					) VALUES (
+					#{rentRoomNo, jdbcType=VARCHAR}
+					, #{userNo, jdbcType=VARCHAR}
+					, #{rentBldgNo, jdbcType=VARCHAR}
+					, #{roomNo, jdbcType=VARCHAR}
+					, #{roomUngrYn, jdbcType=CHAR}
+					, #{roomCnt, jdbcType=NUMERIC}
+					, #{livingType, jdbcType=VARCHAR}
+					)
+	</insert>
+
+
+
+
+
+<update id="updateRentRoom" parameterType="RentRoomVO">
+	UPDATE RENT_ROOM
+	SET
+		ROOM_UNGR_YN = #{roomUngrYn, jdbcType=CHAR}
+	WHERE
+		RENT_ROOM_NO = #{rentRoomNo, jdbcType=VARCHAR}
+	 
+</update>
+
+<delete id="deleteRentRoom" parameterType="String">
+UPDATE RENT_ROOM
+	SET
+		ROOM_DEL_YN = 'Y'
+	WHERE
+		RENT_ROOM_NO = #{rentRoomNo, jdbcType=VARCHAR}
+</delete>
+
+<!--======================== 임대인 메인화면 통계 ==========================-->
+<!-- 건물 공실 체크  -->
+<select id="bldgRoomCheck" parameterType="String" resultMap="RentRoomResultMap">
+	SELECT 
+    C.bldg_nm, 
+    COUNT(DISTINCT B.rent_room_no) AS total_rooms,
+    COUNT(DISTINCT CASE WHEN A.CNTRCT_STTS = 'RSTTS01' THEN B.rent_room_no ELSE NULL END) AS rooms_with_contract
+FROM 
+    RENT_ROOM B
+JOIN 
+    RENT_BLDG C ON B.RENT_BLDG_NO = C.RENT_BLDG_NO
+LEFT JOIN 
+    CNTRCT_RENT A ON A.RENT_ROOM_NO = B.RENT_ROOM_NO
+WHERE 
+    C.BLDG_DEL_YN = 'N'
+AND 
+    B.ROOM_DEL_YN = 'N'
+AND 
+    C.USER_NO = #{userNo}
+GROUP BY 
+    C.bldg_nm
+</select>
+
+
+<!-- 호실 공실 경과 시간  -->
+<select id="roomGongSilCheck" parameterType="String" resultMap="RentRoomResultMap">
+
+
+SELECT *
+FROM (
+    SELECT 
+        C.bldg_nm, 
+        B.rent_room_no,
+        D.ROOM_FLOOR,
+        D.ROOM_UNIT,
+        CASE WHEN TRUNC(SYSDATE) - TRUNC(A.DCT_END) > 0 
+             THEN TRUNC(SYSDATE) - TRUNC(A.DCT_END) 
+             ELSE 0 
+        END AS since_end
+    FROM 
+        RENT_ROOM B
+    JOIN 
+        RENT_BLDG C ON B.RENT_BLDG_NO = C.RENT_BLDG_NO
+    LEFT JOIN 
+        CNTRCT_RENT A ON A.RENT_ROOM_NO = B.RENT_ROOM_NO
+    JOIN
+        ROOM D ON B.ROOM_NO = D.ROOM_NO
+    WHERE 
+        C.BLDG_DEL_YN = 'N'
+    AND 
+        B.ROOM_DEL_YN = 'N'
+    AND 
+        C.USER_NO = #{userNo}
+    AND
+        A.CNTRCT_STTS != 'RSTTS01'
+   
+    ORDER BY
+        since_end DESC
+)
+<![CDATA[ 
+WHERE ROWNUM <= 3
+]]> 
+
+
+</select>
+<select id="rentRoomCnt" parameterType="String">
+SELECT COUNT(A.RENT_ROOM_NO)
+FROM RENT_ROOM A, RENT_BLDG B
+WHERE B.USER_NO = #{userNo}
+AND B.BLDG_DEL_YN = 'N'
+AND A.ROOM_DEL_YN = 'N'
+AND B.RENT_BLDG_NO = A.RENT_BLDG_NO
+</select>
+
+<select id="jjinmakGonsil" parameterType="String">
+SELECT COUNT(*)
+FROM RENT_ROOM
+WHERE RENT_BLDG_NO = #{rentBldgNo}
+AND GONSIL = 'Y'
+</select>
+
+<select id="rentRoomRSTTS01byBuilding" parameterType="String" resultMap="RentRoomResultMap">
+SELECT RENT_ROOM.RENT_ROOM_NO
+	FROM RENT_ROOM
+	LEFT JOIN ROOM ON ROOM.room_no = RENT_ROOM.ROOM_NO
+    LEFT JOIN CNTRCT_RENT ON CNTRCT_RENT.RENT_ROOM_NO = RENT_ROOM.RENT_ROOM_NO
+	WHERE RENT_ROOM.RENT_BLDG_NO = #{rentBldgNo, jdbcType=VARCHAR}
+	AND RENT_ROOM.ROOM_DEL_YN  = 'N'
+    AND CNTRCT_RENT.CNTRCT_STTS = 'RSTTS01'
+</select>
+</mapper>

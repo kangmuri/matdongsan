@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
+	
+	
+	<context:component-scan base-package="kr.or.mat">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+	</context:component-scan>
+	
+	<!-- 	원본 request -> wrapper request로 변경할때 사용되는 전략. -->
+	<!-- 	HttpServletRequest(Part p) -> MultipartHttpServletRequest(MultipartFile) -->
+		<bean id="filterMultipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"
+			p:maxInMemorySize="#{10*1024}"
+			p:maxUploadSize="#{1024*1024*100}"
+			p:maxUploadSizePerFile="#{1024*1024*50}"
+			p:uploadTempDir="file:C:/01.temp"
+		/>
+		
+		<util:properties id="appInfo" location="classpath:kr/or/mat/AppInfo.properties" />
+		
+		
+</beans>

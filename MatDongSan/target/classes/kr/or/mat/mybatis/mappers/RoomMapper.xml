@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.room.mapper.RoomMapper">
+	
+	
+	<insert id="insertRoom" parameterType="RoomVO">
+
+	 	<selectKey keyProperty="roomNo" resultType="String" order="BEFORE">
+  			SELECT 'R' || TO_CHAR(SYSDATE, 'YYMMDD') || TO_CHAR(room_seq.NEXTVAL, 'FM000')
+  			FROM DUAL
+		</selectKey>
+		INSERT INTO ROOM (
+							    ROOM_NO
+							    , BLDG_ADDR
+							    , REGION_1DEPTH_NM
+							    , REGION_2DEPTH_NM
+							    , REGION_3DEPTH_NM,
+							    BUN, JI, H_CODE
+							    , B_CODE
+							    , X
+							    , Y
+							    , FLOOR_CNT
+							    , RENT_DONG
+							    , ROOM_FLOOR
+							    , ROOM_UNIT
+							    , ROOM_BTR_CNT
+							    , DCT_LAD_LNDCGR
+							    , DCT_LAD_AR
+							    , BULD_AR
+							    , BULD_PRPOS
+							    , BULD_MPRPOS
+							    , RENT_AR
+							    , ROOM_TY
+							    , ROOM_PARKNG_YN
+							    , ROOM_ELVTR_YN
+							    , UNITY_ATCHMNFL_NO
+							    , USER_NO
+  							) VALUES (
+									    #{roomNo, jdbcType=VARCHAR}
+									    , #{bldgAddr, jdbcType=VARCHAR}
+									    , #{region1depthNm, jdbcType=VARCHAR}
+									    , #{region2depthNm, jdbcType=VARCHAR}
+									    , #{region3depthNm, jdbcType=VARCHAR}
+									    , #{bun, jdbcType=VARCHAR}
+									    , #{ji, jdbcType=VARCHAR}
+									    , #{hCode, jdbcType=VARCHAR}
+									    , #{bCode, jdbcType=VARCHAR}
+									    , #{x, jdbcType=NUMERIC}
+									    , #{y, jdbcType=NUMERIC}
+									    , #{floorCnt, jdbcType=NUMERIC}
+									    , #{rentDong, jdbcType=NUMERIC}
+									    , #{roomFloor, jdbcType=NUMERIC}
+									    , #{roomUnit, jdbcType=NUMERIC}
+									    , #{roomBtrCnt, jdbcType=NUMERIC}
+									    , #{dctLadLndcgr, jdbcType=VARCHAR}
+									    , #{dctLadAr, jdbcType=NUMERIC}
+									    , #{buldAr, jdbcType=NUMERIC}
+									    , #{buldPrpos, jdbcType=VARCHAR}
+									    , #{buldMprpos, jdbcType=VARCHAR}
+									    , #{rentAr, jdbcType=NUMERIC}
+									    , #{roomTy, jdbcType=VARCHAR}
+									    , #{roomParkngYn, jdbcType=CHAR}
+									    , #{roomElvtrYn, jdbcType=CHAR}
+									    , #{unityAtchmnflNo, jdbcType=VARCHAR}
+									    , #{userNo, jdbcType=VARCHAR}
+									  )
+		
+	</insert>
+	
+	<update id="updateRoom" parameterType="RoomVO">
+
+	    UPDATE ROOM
+	    <set>
+	        <if test="bldgAddr != null">BLDG_ADDR = #{bldgAddr, jdbcType=VARCHAR},</if>
+	        <if test="region1depthNm != null">REGION_1DEPTH_NM = #{region1depthNm, jdbcType=VARCHAR},</if>
+	        <if test="region2depthNm != null">REGION_2DEPTH_NM = #{region2depthNm, jdbcType=VARCHAR},</if>
+	        <if test="region3depthNm != null">REGION_3DEPTH_NM = #{region3depthNm, jdbcType=VARCHAR},</if>
+	        <if test="bun != null">BUN = #{bun, jdbcType=VARCHAR},</if>
+	        <if test="ji != null">JI = #{ji, jdbcType=VARCHAR},</if>
+	        <if test="bCode != null">H_CODE = #{bCode, jdbcType=VARCHAR},</if>
+	        <if test="hCode != null">B_CODE = #{hCode, jdbcType=VARCHAR},</if>
+	        <if test="x != null">X = #{x, jdbcType=VARCHAR},</if>
+	        <if test="y != null">Y = #{y, jdbcType=VARCHAR},</if>
+	        <if test="floorCnt != null">FLOOR_CNT = #{floorCnt, jdbcType=VARCHAR},</if>
+	        <if test="rentDong != null">RENT_DONG = #{rentDong, jdbcType=VARCHAR},</if>
+	        <if test="roomFloor != null">ROOM_FLOOR = #{roomFloor, jdbcType=VARCHAR},</if>
+	        <if test="roomUnit != null">ROOM_UNIT = #{roomUnit, jdbcType=VARCHAR},</if>
+	        <if test="roomBtrCnt != null">ROOM_BTR_CNT = #{roomBtrCnt, jdbcType=VARCHAR},</if>
+	        <if test="dctLadLndcgr != null">DCT_LAD_LNDCGR = #{dctLadLndcgr, jdbcType=VARCHAR},</if>
+	        <if test="dctLadAr != null">DCT_LAD_AR = #{dctLadAr, jdbcType=VARCHAR},</if>
+	        <if test="buldAr != null">BULD_AR = #{buldAr, jdbcType=VARCHAR},</if>
+	        <if test="buldPrpos != null">BULD_PRPOS = #{buldPrpos, jdbcType=VARCHAR},</if>
+	        <if test="buldMprpos != null">BULD_MPRPOS = #{buldMprpos, jdbcType=VARCHAR},</if>
+	        <if test="rentAr != null">RENT_AR = #{rentAr, jdbcType=VARCHAR},</if>
+	        <if test="roomTy != null">ROOM_TY = #{roomTy, jdbcType=VARCHAR},</if>
+	        <if test="roomParkngYn != null">ROOM_PARKNG_YN = #{roomParkngYn, jdbcType=VARCHAR},</if>
+	        <if test="roomElvtrYn != null">ROOM_ELVTR_YN = #{roomElvtrYn, jdbcType=VARCHAR},</if>
+	        <if test="unityAtchmnflNo != null">UNITY_ATCHMNFL_NO = #{unityAtchmnflNo, jdbcType=VARCHAR},</if>
+	        <if test="unityAtchmnflNo == null">UNITY_ATCHMNFL_NO = null,</if>
+	    </set>
+	    WHERE ROOM_NO = #{roomNo, jdbcType=VARCHAR}
+
+	</update>
+</mapper>

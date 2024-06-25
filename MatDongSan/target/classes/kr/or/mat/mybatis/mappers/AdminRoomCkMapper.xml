@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.admin.mapper.AdminRoomCkMapper">
+
+	<resultMap id="RoomDealingResultMap" type="RoomDealingVO" autoMapping="true">
+	    <id property="roomDelngNo" column="ROOM_DELNG_NO"/>
+		    
+	    <association property="room" javaType="RoomVO" autoMapping="true">
+	        <id property="roomNo" column="ROOM_NO"/>
+	        <collection property="tbAttachFileList" ofType="TbAttachFileVO" autoMapping="true"/>
+	        <collection property="roomLvlhList" ofType="RoomLvlhVO" autoMapping="true"/>
+	    </association>
+	</resultMap>
+
+
+
+<sql id="searchFrag">
+	<where>        
+		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(simpleCondition.searchWord)">
+			<choose>
+				<when test="simpleCondition.searchType eq 'pstSj'">
+					INSTR(PST_SJ, #{simpleCondition.searchWord}) > 0   
+				</when>
+				<when test="simpleCondition.searchType eq 'userId'">
+					INSTR(USER_ID, #{simpleCondition.searchWord}) > 0   
+				</when>
+				<when test="simpleCondition.searchType eq 'userNm'">
+					INSTR(USER_NM, #{simpleCondition.searchWord}) > 0   
+				</when>
+			</choose>
+		</if>
+	</where>
+</sql>
+<!-- 전체(매물)페이지 수  -->
+<select id="selectTotalRecord" resultType="int" parameterType="kr.or.mat.paging.PaginationInfo">
+	SELECT COUNT(*)
+	  FROM ROOM_DEALING A
+	  LEFT JOIN ROOM B ON (A.ROOM_NO = B.ROOM_NO) 
+	  LEFT JOIN USERS C ON (B.USER_NO = C.USER_NO)
+	<include refid="searchFrag" />
+</select>
+<!-- 매물 리스트 조회 -->
+<select id="selectRoomList" resultType="AdminRoomVO" parameterType="kr.or.mat.paging.PaginationInfo">
+	SELECT B.*  /** kr.or.mat.admin.mapper.AdminQnaMapper.selectAdminQnaList */
+	FROM(
+		SELECT ROWNUM RNUM, A.*
+		FROM(
+			SELECT
+			        ROOM_DELNG_NO
+			        ,ROOM_SIZE
+			        ,ROOM_CNT
+			        ,LIVING_TYPE
+			        ,DELNG_TYPE
+			        ,ROOM_LSHL
+			        ,ROOM_MHL
+			        ,ROOM_DEPOSIT
+			        ,ROOM_MANAGECT_PC
+			        ,ROOM_MANAGECT_AT
+			        ,ROOM_DETAIL_DC_SJ
+			        ,ROOM_DETAIL_DC
+			        ,ROOM_MVN_POSBL
+			        ,ROOM_DELNG_DE
+			        ,ROOM_DEALING_STTS
+			        ,ROOM_OTHBC_YN
+			        ,A.ROOM_NO
+			        ,ROOM_PAS
+			        ,ROOM_ASAP_YN
+			        ,USER_ID
+			 FROM ROOM_DEALING A
+			 LEFT JOIN ROOM B ON (A.ROOM_NO = B.ROOM_NO)
+			 LEFT JOIN USERS C ON (B.USER_NO = C.USER_NO)
+			 <include refid="searchFrag"/>
+			) A
+	) B
+	<![CDATA[
+		WHERE RNUM  >= #{firstRecord} AND RNUM <= #{lastRecord}
+	]]>
+</select>
+
+
+<!-- 관리자 매물상세 조회 -->
+<select id="selectAdminRoomDealing" parameterType="string" resultMap="RoomDealingResultMap">
+		SELECT  /** kr.or.mat.admin.mapper.AdminQnaMapper.selectAdminRoomDealing */
+                RD.ROOM_DELNG_NO
+                , RD.ROOM_SIZE
+                , RD.ROOM_CNT
+                , ( 
+                        select C.CMMN_CD_NM
+                        from CMMN_CODE C
+                        where RD.LIVING_TYPE = C.CMMN_CD
+                  ) LIVING_TYPE
+                , (
+                        select C.CMMN_CD_NM
+                        from CMMN_CODE C
+                        where RD.DELNG_TYPE = C.CMMN_CD
+                  ) DELNG_TYPE
+                , RD.ROOM_LSHL
+                , RD.ROOM_MHL
+                , RD.ROOM_DEPOSIT
+                , RD.ROOM_MANAGECT_PC
+                , RD.ROOM_MANAGECT_AT
+                , RD.ROOM_DETAIL_DC_SJ
+                , RD.ROOM_DETAIL_DC
+                , RD.ROOM_MVN_POSBL
+                , RD.ROOM_DELNG_DE
+                , (
+                        select C.CMMN_CD_NM
+                        from CMMN_CODE C
+                        where RD.ROOM_DEALING_STTS = C.CMMN_CD
+                  ) ROOM_DEALING_STTS
+                , RD.ROOM_OTHBC_YN
+                , RD.ROOM_NO
+                , RD.ROOM_PAS
+                , RD.ROOM_ASAP_YN
+                , R.BLDG_ADDR
+                , R.REGION_1DEPTH_NM
+                , R.REGION_2DEPTH_NM
+                , R.REGION_3DEPTH_NM
+                , R.BUN
+                , R.JI
+                , R.H_CODE
+                , R.B_CODE
+                , R.X
+                , R.Y
+                , R.FLOOR_CNT
+                , R.RENT_DONG
+                , R.ROOM_FLOOR
+                , R.ROOM_UNIT
+                , R.ROOM_BTR_CNT
+                , R.DCT_LAD_LNDCGR
+                , R.DCT_LAD_AR
+                , R.BULD_AR
+                , R.BULD_PRPOS
+                , R.BULD_MPRPOS
+                , R.RENT_AR
+                , (
+                        select C.CMMN_CD_NM
+                        from CMMN_CODE C
+                        where R.ROOM_TY = C.CMMN_CD
+                  ) ROOM_TY
+                , R.ROOM_PARKNG_YN
+                , R.ROOM_ELVTR_YN
+                , R.UNITY_ATCHMNFL_NO
+                , R.USER_NO
+                , T.WEB_PATH
+                , T.ATCHMNFL_SN
+                , (
+                        select C.CMMN_CD_NM
+                        from CMMN_CODE C
+                        where RL.FCLTY_SE = C.CMMN_CD
+                  ) FCLTY_SE
+                , RL.FCLTY_CD
+        from ROOM_DEALING RD LEFT OUTER JOIN ROOM R ON( RD.ROOM_NO = R.ROOM_NO) RIGHT OUTER JOIN TB_ATTACH_FILE T ON(T.UNITY_ATCHMNFL_NO = R.R.UNITY_ATCHMNFL_NO) RIGHT OUTER JOIN ROOM_LVLH RL ON (RL.ROOM_NO = R.ROOM_NO)
+        WHERE  RD.ROOM_OTHBC_YN = 'N'
+            AND RD.ROOM_DELNG_NO = #{roomDealingNo, jdbcType=VARCHAR}
+	</select>
+
+<!-- 매물검수 완료 수정 -->
+<update id="updateAdminRoomDealing" parameterType="String">
+	UPDATE ROOM_DEALING /** kr.or.mat.admin.mapper.AdminQnaMapper.updateAdminRoomDealing */
+	   SET ROOM_DEALING_STTS ='RS02'
+	 WHERE ROOM_DELNG_NO = #{roomDealingNo, jdbcType=VARCHAR}
+</update>
+
+<!-- 매물 삭제 -->
+<update id="deleteAdminRoomDealing" parameterType="String">
+	UPDATE ROOM_DEALING /** kr.or.mat.admin.mapper.AdminQnaMapper.deleteAdminRoomDealing */
+	   SET ROOM_DEALING_STTS ='RS05'
+	 WHERE ROOM_DELNG_NO = #{roomDealingNo, jdbcType=VARCHAR}
+</update>
+
+
+</mapper>

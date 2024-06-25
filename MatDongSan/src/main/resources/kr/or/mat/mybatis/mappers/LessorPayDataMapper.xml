@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.rentPayData.mapper.RentPayDataMapper">
+
+<resultMap type="RentPayDataVO" id="RentPayDataResultMap" autoMapping="true">
+		<id property="payNo" column="PAY_NO"/>
+			
+		<association property="rentContract" javaType="rentContractVO" autoMapping="true">
+			  <id property="cntrctRentNo" column="CNTRCT_RENT_NO"/>
+	        <association property="rentRoom"  javaType="rentRoomVO" autoMapping="true">
+		        <association property="room"  javaType="RoomVO" autoMapping="true"/>
+	       		<association property="rentBldg"  javaType="RentBldgVO" autoMapping="true"/>
+			</association>
+		</association>
+		
+</resultMap>
+
+<update id="updatePayDe" parameterType="RentPayDataVO">
+	UPDATE PAY_DATA
+	SET PAY_DE = #{payDe, jdbcType=DATE},
+		PAY_STTS = 'PAY01'
+	WHERE PAY_NO = #{payNo,jdbcType=VARCHAR}
+		  
+</update>
+<update id="updateRentpayStts">
+	  <![CDATA[
+	  UPDATE PAY_DATA 
+		SET PAY_STTS =
+		    CASE
+		        WHEN DEDT_DE < TRUNC(SYSDATE) THEN 'PAY03' /* 납부 상태 업데이트 */
+		        ELSE PAY_STTS /* 조건을 충족하지 않는 경우 기존 값을 유지 */
+		    END
+        ]]>
+</update>
+	
+<select id="selectTotalRecord" resultType="int" parameterType="kr.or.mat.paging.PaginationInfo">
+	SELECT COUNT(*)
+    FROM PAY_DATA A, CNTRCT_RENT B, RENT_ROOM C, RENT_BLDG D, ROOM E
+			WHERE A.CNTRCT_RENT_NO = B.CNTRCT_RENT_NO
+			AND B.RENT_ROOM_NO = C.RENT_ROOM_NO
+			AND C.RENT_BLDG_NO = D.RENT_BLDG_NO
+			AND C.ROOM_NO = E.ROOM_NO
+			AND D.USER_NO = #{userNo,jdbcType=VARCHAR}
+			AND A.PAY_DEL_YN = 'N'
+</select>
+
+<select id="selectPayDataAllList" resultMap="RentPayDataResultMap" parameterType="kr.or.mat.paging.PaginationInfo">
+	SELECT K.* FROM (SELECT ROWNUM KNUM, S.* FROM 
+		(SELECT H.*, ROWNUM FROM 
+			( SELECT ROWNUM RNUM, G.* FROM (
+				SELECT D.BLDG_NM /* 건물명*/ 
+				,E.ROOM_FLOOR /* 해당 층*/ 
+				,E.ROOM_UNIT /* 해당 호수*/ 
+				,A.PAY_NO /*납부번호*/ 
+				,A.BL_NM /* 청구서이름*/
+				,A.RQEST_AMT /* 청구금액*/ 
+				,TO_CHAR(A.DEDT_DE, 'YYYY-MM-DD') DEDT_DE /* 납기일자*/
+				,TO_CHAR(A.PAY_DE,'YYYY-MM-DD') PAY_DE /* 납부일자*/ 
+				,( SELECT C.CMMN_CD_NM FROM CMMN_CODE C WHERE
+					A.PAY_STTS = C.CMMN_CD
+				) PAY_STTS /* 납부상태*/ 
+				,A.CNTRCT_RENT_NO /* 임대관리계약정보번호*/ 
+				,D.BLDG_ADDR /* 도로명주소*/ 
+				,B.LESSEE_NO /* 사용자번호*/ 
+				,B.CNTRCTR_NM /*계약자명*/ 
+				,B.MT_RCPMNY_AMT  /* 월입금액*/ 
+				,B.MHL_AMT /* 임대료*/ 
+				,B.MANAGECT_AMT /* 관리비*/
+				,B.CTP_VAT_APPLC_YN /* 부가세적용여부*/ 
+	FROM PAY_DATA A, CNTRCT_RENT B, RENT_ROOM C, RENT_BLDG D, ROOM E WHERE
+		A.CNTRCT_RENT_NO = B.CNTRCT_RENT_NO
+		AND B.RENT_ROOM_NO = C.RENT_ROOM_NO AND C.RENT_BLDG_NO = D.RENT_BLDG_NO
+		AND C.ROOM_NO = E.ROOM_NO
+		AND A.PAY_DEL_YN = 'N'
+		AND D.USER_NO = #{userNo,jdbcType=VARCHAR} ORDER BY A.PAY_NO DESC ) G ) H ORDER BY RNUM DESC) S
+		
+		ORDER BY KNUM DESC
+ ) K   
+		<![CDATA[ 
+		WHERE RNUM >= #{firstRecord} AND RNUM <= #{lastRecord}
+		]]> 
+
+</select>
+
+<select id="selectPayDataOne" resultMap="RentPayDataResultMap" parameterType="RentPayDataVO">
+SELECT D.BLDG_NM /* 건물명*/ 
+				,E.ROOM_FLOOR /* 해당 층*/ 
+				,E.ROOM_UNIT /* 해당 호수*/ 
+				,E.RENT_DONG  /* 해당 동*/
+				,B.LESSEE_NO /* 사용자번호*/ 
+				,A.PAY_NO /*납부번호*/ 
+				,A.BL_NM /* 청구서이름*/
+				,A.RQEST_AMT /* 청구금액*/ 
+				,TO_CHAR(A.DEDT_DE, 'YYYY-MM-DD') DEDT_DE /* 납기일자*/
+				,TO_CHAR(A.PAY_DE,'YYYY-MM-DD') PAY_DE /* 납부일자*/ 
+				,( SELECT C.CMMN_CD_NM FROM CMMN_CODE C WHERE
+					A.PAY_STTS = C.CMMN_CD
+				) PAY_STTS /* 납부상태*/ 
+				,A.CNTRCT_RENT_NO /* 임대관리계약정보번호*/ 
+				,B.CNTRCTR_NM /*계약자명*/ 
+				,B.CNTRCT_STTS /*계약상태*/ 
+				,TO_CHAR(B.MIDWAY_DT, 'YYYY-MM-DD') MIDWAY_DT /*중도퇴실일자*/ 
+				,B.MBTLNUM /*계약자명*/ 
+				,D.BLDG_NM /* 건물명*/ 
+				,D.BLDG_ADDR /* 도로명주소*/ 
+				,B.MHL_AMT /* 임대료*/ 
+				,B.MANAGECT_AMT /* 관리비*/
+				,(
+	               SELECT C.CMMN_CD_NM
+	               FROM CMMN_CODE C
+	               WHERE B.CTP_VAT_APPLC_YN  = C.CMMN_CD
+	             ) CTP_VAT_APPLC_YN /* 부가세적용여부*/ 
+		FROM PAY_DATA A, CNTRCT_RENT B, RENT_ROOM C, RENT_BLDG D, ROOM E 
+		WHERE A.CNTRCT_RENT_NO = B.CNTRCT_RENT_NO
+		AND B.RENT_ROOM_NO = C.RENT_ROOM_NO AND C.RENT_BLDG_NO = D.RENT_BLDG_NO
+		AND C.ROOM_NO = E.ROOM_NO
+		AND D.USER_NO =  #{rentContract.rentRoom.rentBldg.userNo,jdbcType=VARCHAR}
+        AND A.PAY_NO =  #{payNo,jdbcType=VARCHAR}
+        AND A.PAY_DEL_YN = 'N'
+</select>
+
+<!--======================== 임대인 메인화면 통계 ==========================-->
+<!-- 오늘 입금 예정 건수  -->
+<select id="todayPayDedtDe" parameterType="String" >
+SELECT NVL(COUNT(*), 0)
+FROM CNTRCT_RENT A, RENT_ROOM B, RENT_BLDG C, PAY_DATA D
+WHERE A.RENT_ROOM_NO = B.RENT_ROOM_NO
+AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+AND A.CNTRCT_RENT_NO = D.CNTRCT_RENT_NO
+AND A.CTP_DEL_YN = 'N'
+AND C.BLDG_DEL_YN = 'N'
+AND B.ROOM_DEL_YN = 'N'
+AND D.PAY_DEL_YN = 'N'
+AND C.USER_NO = #{userNo}
+AND TRUNC(D.DEDT_DE) = TRUNC(SYSDATE)
+</select>
+
+<!-- 당월 입금 금액  -->
+<select id="thisMonthRqestAmt"  parameterType="String" >
+SELECT NVL(SUM(D.RQEST_AMT), 0)
+FROM CNTRCT_RENT A
+JOIN RENT_ROOM B ON A.RENT_ROOM_NO = B.RENT_ROOM_NO
+JOIN RENT_BLDG C ON B.RENT_BLDG_NO = C.RENT_BLDG_NO
+JOIN PAY_DATA D ON A.CNTRCT_RENT_NO = D.CNTRCT_RENT_NO
+WHERE A.CTP_DEL_YN = 'N'
+  AND C.BLDG_DEL_YN = 'N'
+  AND B.ROOM_DEL_YN = 'N'
+  AND D.PAY_DEL_YN = 'N'
+  AND C.USER_NO = #{userNo}
+  AND TRUNC(D.DEDT_DE, 'MM') = TRUNC(SYSDATE, 'MM')
+</select>
+
+<!-- 오늘 입금 금액   -->
+<select id="todayRqestAmt"  parameterType="String" >
+SELECT NVL(SUM(D.RQEST_AMT), 0)
+FROM CNTRCT_RENT A, RENT_ROOM B, RENT_BLDG C, PAY_DATA D
+WHERE A.RENT_ROOM_NO = B.RENT_ROOM_NO
+AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+AND A.CNTRCT_RENT_NO = D.CNTRCT_RENT_NO
+AND A.CTP_DEL_YN = 'N'
+AND C.BLDG_DEL_YN = 'N'
+AND B.ROOM_DEL_YN = 'N'
+AND D.PAY_DEL_YN = 'N'
+AND C.USER_NO = #{userNo}
+AND TRUNC(D.DEDT_DE) = TRUNC(SYSDATE)
+</select>
+
+<select id="chart" resultMap="RentPayDataResultMap" parameterType="String" >
+SELECT 
+    TO_CHAR(D.DEDT_DE, 'YYYY-MM') AS PAY_MONTH, 
+    COUNT(*) AS PAY_COUNT,
+    SUM(D.RQEST_AMT) AS TOTAL_AMOUNT
+FROM 
+    CNTRCT_RENT A,
+    RENT_ROOM B,
+    RENT_BLDG C,
+    PAY_DATA D
+WHERE 
+    A.RENT_ROOM_NO = B.RENT_ROOM_NO
+    AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+    AND A.CNTRCT_RENT_NO = D.CNTRCT_RENT_NO
+    AND A.CTP_DEL_YN = 'N'
+    AND C.BLDG_DEL_YN = 'N'
+    AND B.ROOM_DEL_YN = 'N'
+    AND D.PAY_DEL_YN = 'N'
+    AND C.USER_NO = #{userNo}
+    AND D.DEDT_DE >= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -10)
+GROUP BY 
+    TO_CHAR(D.DEDT_DE, 'YYYY-MM')
+ORDER BY 
+    PAY_MONTH
+
+</select>
+<select id="chart2" resultMap="RentPayDataResultMap" parameterType="String" >
+SELECT 
+    TO_CHAR(D.DEDT_DE, 'YYYY-MM') AS PAY_MONTH, 
+    COUNT(*) AS PAY_COUNT,
+    SUM(A.MANAGECT_AMT) AS TOTAL_AMOUNT
+FROM 
+    CNTRCT_RENT A,
+    RENT_ROOM B,
+    RENT_BLDG C,
+    PAY_DATA D
+WHERE 
+    A.RENT_ROOM_NO = B.RENT_ROOM_NO
+    AND B.RENT_BLDG_NO = C.RENT_BLDG_NO
+    AND A.CNTRCT_RENT_NO = D.CNTRCT_RENT_NO
+    AND A.CTP_DEL_YN = 'N'
+    AND C.BLDG_DEL_YN = 'N'
+    AND B.ROOM_DEL_YN = 'N'
+    AND D.PAY_DEL_YN = 'N'
+    AND C.USER_NO = 'U240524008'
+    AND D.DEDT_DE >= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -10)
+GROUP BY 
+    TO_CHAR(D.DEDT_DE, 'YYYY-MM')
+ORDER BY 
+    PAY_MONTH
+
+</select>
+</mapper> 

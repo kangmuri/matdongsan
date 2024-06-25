@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.room.mapper.RoomLvlhMapper">
+	<resultMap id="RoomLvlhResultMap" type="RoomLvlhVO">
+	    <result property="fcltySe" column="FCLTY_SE"/>
+	</resultMap>
+	<insert id="insertRoomLvlh" parameterType="RoomLvlhVO">
+		INSERT INTO ROOM_LVLH
+		VALUES (
+			#{fcltySe, jdbcType=VARCHAR}
+			, #{fcltyCd, jdbcType=VARCHAR}
+			, #{roomNo, jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<delete id="deleteRoomLvlh" parameterType="String">
+		delete from ROOM_LVLH
+		where
+		ROOM_NO = #{roomNo, jdbcType=VARCHAR}
+	</delete>
+	
+</mapper>

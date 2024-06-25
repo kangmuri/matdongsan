@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.rentBuilding.mapper.BuildingMapper">
+
+
+<!-- 임대관리 빌딩 insert Mapper -->
+<insert id="insertBuilding" parameterType="RentBldgVO">
+	<selectKey keyProperty="rentBldgNo" resultType="String" order="BEFORE">
+  			SELECT FN_GENERATE_BLDG_NO
+			FROM DUAL
+		</selectKey>
+	INSERT INTO RENT_BLDG (
+	      RENT_BLDG_NO
+		  ,BLDG_DE
+		  ,BLDG_NM
+		  ,BLDG_ADDR
+		  ,BLDG_HOME_CNT
+		  ,USER_NO
+		  ,BLDG_SE
+		  ,BLDG_ALL_CNT
+		  ,BLDG_DONG
+		  ,REGION_1DEPTH_NM
+		  ,REGION_2DEPTH_NM
+		  ,REGION_3DEPTH_NM
+	) VALUES (
+	   	#{rentBldgNo, jdbcType=VARCHAR}
+		, SYSDATE
+		, #{bldgNm, jdbcType=VARCHAR}
+		, #{bldgAddr, jdbcType=VARCHAR}
+		, #{bldgHomeCnt, jdbcType=NUMERIC}
+		, #{userNo, jdbcType=VARCHAR}
+		, #{bldgSe, jdbcType=VARCHAR}
+		, #{bldgAllCnt, jdbcType=NUMERIC}
+		, #{bldgDong, jdbcType=NUMERIC}
+		, #{region1depthNm, jdbcType=VARCHAR}
+		, #{region2depthNm, jdbcType=VARCHAR}
+		, #{region3depthNm, jdbcType=VARCHAR}
+	)
+</insert>
+
+<select id="selectBuildingList" parameterType="String" resultType="RentBldgVO">
+
+	SELECT 
+      RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+      ,BLDG_DE  /* 임대관리건물등록일자*/ 
+      ,BLDG_NM  /* 건물명*/ 
+      ,BLDG_ADDR  /* 도로명주소*/ 
+      ,BLDG_HOME_CNT  /* 가구수총합*/ 
+      ,BLDG_DONG  /* 동정보 */ 
+      ,BLDG_DEL_YN  /* 삭제여부*/ 
+      ,USER_NO  /* 임대관리방등록자번호*/ 
+      ,(
+         select A.CMMN_CD_NM
+         from CMMN_CODE A
+         where BLDG_SE = A.CMMN_CD
+       ) BLDG_SE  /* 건물구분*/ 
+      ,BLDG_ALL_CNT  /* 총층수*/ 
+   FROM RENT_BLDG 
+   WHERE USER_NO = #{userNo, jdbcType=VARCHAR}
+</select>
+
+<select id="selectBuilding" parameterType="String" resultType="RentBldgVO">
+	SELECT 
+		RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+		,BLDG_DE  /* 임대관리건물등록일자*/ 
+		,BLDG_NM  /* 건물명*/ 
+		,BLDG_ADDR  /* 도로명주소*/ 
+		,BLDG_HOME_CNT  /* 가구수총합*/ 
+		,BLDG_DONG  /* 동정보 */ 
+		,BLDG_DEL_YN  /* 삭제여부*/ 
+		,USER_NO  /* 임대관리방등록자번호*/ 
+		,REGION_1DEPTH_NM
+	    ,REGION_2DEPTH_NM
+	    ,REGION_3DEPTH_NM
+		,(
+		   select A.CMMN_CD_NM
+		   from CMMN_CODE A
+		   where BLDG_SE = A.CMMN_CD
+		 ) BLDG_SE  /* 건물구분*/ 
+		,BLDG_ALL_CNT  /* 총층수*/ 
+	FROM RENT_BLDG
+	WHERE RENT_BLDG_NO = #{rentBldgNo, jdbcType=VARCHAR}
+</select>
+
+<update id="updateBuilding" parameterType="RentBldgVO">
+	UPDATE RENT_BLDG
+	SET
+		BLDG_NM = #{bldgNm, jdbcType=VARCHAR}
+		, BLDG_ADDR = #{bldgAddr, jdbcType=VARCHAR}
+		, BLDG_HOME_CNT = #{bldgHomeCnt, jdbcType=NUMERIC}
+	WHERE
+		RENT_BLDG_NO = #{rentBldgNo, jdbcType=VARCHAR}
+	 
+</update>
+
+<delete id="deleteBuilding" parameterType="String">
+UPDATE RENT_BLDG
+	SET
+		BLDG_DEL_YN = 'Y'
+	WHERE
+		RENT_BLDG_NO = #{rentBldgNo, jdbcType=VARCHAR}
+</delete>
+
+<select id="selectBuildingOption" parameterType="String">
+	SELECT BLDG_NM
+		   ,RENT_BLDG_NO
+	FROM RENT_BLDG
+	WHERE USER_NO = #{userNo, jdbcType=VARCHAR}
+	AND BLDG_DEL_YN = 'N'
+</select>
+
+<select id="buldingCnt" parameterType="String">
+SELECT COUNT(*)
+FROM RENT_BLDG
+WHERE USER_NO = #{userNo, jdbcType=VARCHAR}
+AND BLDG_DEL_YN = 'N'
+</select>
+</mapper>

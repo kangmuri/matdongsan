@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.lessee.contractRent.mapper.ContractRentMapper">
+	<resultMap type="ContractRentVO" id="contractRentMap" autoMapping="true">
+		<id property="cntrctRentNo" column="CNTRCT_RENT_NO"/>
+		<association property="rentRoom" javaType="RentRoomVO" autoMapping="true">
+				<association property="room" javaType="RoomVO" autoMapping="true"/>
+				<association property="rentBldg" javaType="RentBldgVO" autoMapping="true"/>
+			</association>
+	</resultMap>
+	<sql id="searchFrag">
+		<trim prefix="AND" prefixOverrides="AND">
+			<if test="not detailConditions.empty">
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.rentBldgNo)">
+					AND INSTR(RENT_BLDG_NO, #{detailConditions.rentBldgNo}) > 0
+				</if>
+			</if>
+		</trim>
+	</sql>
+	
+	
+	<!-- 임차인이 임대중인 건물목록 -->
+	<select id="selectRentBldgList" resultMap="contractRentMap" parameterType="String">
+	SELECT RENT_ROOM.RENT_BLDG_NO
+			, BLDG_NM
+        FROM RENT_ROOM RIGHT OUTER JOIN CNTRCT_RENT ON(RENT_ROOM.RENT_ROOM_NO =  CNTRCT_RENT.RENT_ROOM_NO)
+                       INNER JOIN RENT_BLDG ON(RENT_ROOM.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+         WHERE LESSEE_NO = #{lesseeNo}
+	</select>
+	
+	<!-- 토탈레코드 -->
+	<select id="selectTotalRecord" resultType="int" parameterType="kr.or.mat.paging.PaginationInfo">
+		WITH ROOM_VIEW AS(
+			SELECT BLDG_NM, ROOM_UNIT, RENT_ROOM_NO, RENT_BLDG.RENT_BLDG_NO AS RENT_BLDG_NO
+			FROM RENT_ROOM INNER JOIN ROOM ON(RENT_ROOM.ROOM_NO = ROOM.ROOM_NO)
+			               INNER JOIN RENT_BLDG ON(RENT_ROOM.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+			WHERE ROOM_DEL_YN = 'N' AND ROOM_DEL_YN = 'N'
+			)
+		SELECT COUNT(*)
+		FROM CNTRCT_RENT INNER JOIN ROOM_VIEW ON(CNTRCT_RENT.RENT_ROOM_NO = ROOM_VIEW.RENT_ROOM_NO)              
+		WHERE LESSEE_NO = #{detailConditions.lesseeNo, jdbcType=VARCHAR}
+	</select>
+	
+	<!-- 계약리스트 -->
+	<select id="selectContractRentList" resultMap="contractRentMap" parameterType="kr.or.mat.paging.PaginationInfo" >
+		WITH ROOM_VIEW AS(
+			SELECT BLDG_NM, ROOM_UNIT, RENT_ROOM_NO, RENT_BLDG.RENT_BLDG_NO AS RENT_BLDG_NO
+			FROM RENT_ROOM INNER JOIN ROOM ON(RENT_ROOM.ROOM_NO = ROOM.ROOM_NO)
+			               INNER JOIN RENT_BLDG ON(RENT_ROOM.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+			WHERE ROOM_DEL_YN = 'N' AND ROOM_DEL_YN = 'N' 
+			)
+		SELECT 
+			BLDG_NM
+			, RENT_BLDG_NO
+			, ROOM_UNIT
+			, CNTRCT_RENT_NO
+			, CNTRCTR_NM
+			, MBTLNUM
+			, TO_CHAR(DCT_END) AS DCT_END
+			, TO_CHAR(DCT_BGNG) AS DCT_BGNG 
+			,GRNTE_AMT
+            ,MHL_AMT
+            ,MANAGECT_AMT
+            ,MT_RCPMNY_AMT
+		FROM CNTRCT_RENT INNER JOIN ROOM_VIEW ON(CNTRCT_RENT.RENT_ROOM_NO = ROOM_VIEW.RENT_ROOM_NO)              
+		WHERE LESSEE_NO = #{detailConditions.lesseeNo, jdbcType=VARCHAR} AND CTP_DEL_YN = 'N'
+		<include refid="searchFrag"/>
+	</select>
+	
+	<!-- 계약 디테일 -->
+	<select id="selectContractRent" resultMap="contractRentMap" parameterType="string">
+	WITH ROOM_VIEW AS(
+		SELECT ROOM_UNIT
+			  ,BULD_AR
+			  ,RENT_ROOM.RENT_ROOM_NO
+			  ,BLDG_NM
+			  ,RENT_AR
+		FROM RENT_ROOM INNER JOIN ROOM ON(RENT_ROOM.ROOM_NO = ROOM.ROOM_NO)
+		               INNER JOIN RENT_BLDG ON(RENT_ROOM.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+		WHERE RENT_ROOM.ROOM_DEL_YN = 'N' AND ROOM_DEL_YN = 'N'
+		)
+	SELECT 
+	    cntrct_rent_no,
+	    cntrctr_nm,
+	    mbtlnum,
+	    email_adres,
+	    (select cmmn_cd_nm
+		 from cmmn_code
+		 where cmmn_cd = vhcle_yn) vhcle_yn,
+	    (select cmmn_cd_nm
+		 from cmmn_code
+		 where cmmn_cd = animal_yn) animal_yn,
+	    ctp_pic_name,
+	    ctp_pic_email,
+	    ctp_pic_mbtlnum,
+	    dct_rent_ar,
+	    (select cmmn_cd_nm
+        from cmmn_code
+        where cmmn_cd = dct_clsf) dct_clsf,
+	    rent_cnd,
+	    TO_CHAR(dct_bgng) AS dct_bgng,
+	    TO_CHAR(dct_end) AS dct_end,
+	    cntrct_de,
+	    ctp_vat_applc_yn,
+	    grnte_amt,
+	    mhl_amt,
+	    managect_amt,
+	    ctp_rcpmnyer,
+	    TO_CHAR(ctp_dedt_de) AS ctp_dedt_de,
+	    mt_rcpmny_amt,
+	    TO_CHAR(ctp__updde_dt) AS ctp__updde_dt,
+	    ctp_del_yn,
+	    CNTRCT_RENT.rent_room_no,
+	    lessee_no,
+	    bldg_nm,
+	    ctp_dedt_de,
+	    room_unit,
+	    RENT_AR
+	FROM CNTRCT_RENT INNER JOIN ROOM_VIEW ON(CNTRCT_RENT.RENT_ROOM_NO = ROOM_VIEW.RENT_ROOM_NO)
+	WHERE CTP_DEL_YN = 'N' AND CNTRCT_RENT.CNTRCT_RENT_NO = #{cntrctRentNo}
+	</select>
+	
+</mapper>

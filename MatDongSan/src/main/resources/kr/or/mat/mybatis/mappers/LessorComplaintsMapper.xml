@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.lessorComplaints.mapper.LessorComplaintsMapper">
+
+
+<resultMap type="LessorComplaintsVO" id="LessorComplaintsMap" autoMapping="true">
+<!-- 		<id property="cvlcpNo" column="CVLCP_NO"/> -->
+			
+		<association property="rentBldg" javaType="RentBldgVO" autoMapping="true">
+			  <id property="rentBldgNo" column="RENT_BLDG_NO"/>
+		</association>
+		<association property="users" javaType="UserVO" autoMapping="true">
+			  <id property="userNo" column="USER_NO"/>
+		</association>
+		 <association property="rentRoom"  javaType="RentRoomVO" autoMapping="true">
+		        <association property="room"  javaType="RoomVO" autoMapping="true"/>
+        </association>
+		 <association property="rentContract"  javaType="RentContractVO" autoMapping="true">
+        </association>
+</resultMap>
+
+
+
+
+<select id="selectComplaintsList" resultMap="LessorComplaintsMap" parameterType="kr.or.mat.paging.PaginationInfo">
+
+SELECT K.* FROM (SELECT ROWNUM KNUM, S.* FROM 
+		(SELECT H.*, ROWNUM FROM 
+			( SELECT ROWNUM RNUM, G.* FROM (
+					 SELECT
+					    A.CVLCP_DEL_YN  /* 민원삭제여부*/ 
+					    ,A.CVLCP_DT  /* 민원작성일시*/ 
+					    ,TO_CHAR(A.CVLCP_HOPE_DT, 'YYYY-MM-DD HH24:MI') CVLCP_HOPE_DT  /* 민원처리희망일시*/ 
+					    ,A.CVLCP_NO  /* 민원번호*/ 
+					    ,SUBSTR(A.CVLCP_CN, 1, 8)||'...' CVLCP_CN /* 민원내용*/ 
+					    ,A.CVLCP_ANS  /* 민원답변*/ 
+					    ,( SELECT C.CMMN_CD_NM FROM CMMN_CODE C WHERE
+							A.CVLCP_KND = C.CMMN_CD
+						) CVLCP_KND  /* 민원종류*/ 
+					    ,( SELECT C.CMMN_CD_NM FROM CMMN_CODE C WHERE
+							A.CVLCP_STTS = C.CMMN_CD
+						) CVLCP_STTS  /* 처리상태*/ 
+					    ,A.UNITY_ATCHMNFL_NO  /* 통합첨부파일번호*/ 
+					    ,A.RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+					    ,A.LESSEE_NO  /* 민원작성자*/ 
+					    ,A.LESSOR_NO  /* 민원처리자*/
+					    ,TO_CHAR(A.CVLCP_OK_DT, 'YYYY-MM-DD HH24:MI') CVLCP_OK_DT /* 처리일시 */
+					    ,B.BLDG_NM /* 건물 명 */
+					    ,C.USER_NM /* 임차인 이름 */
+					    ,E.ROOM_UNIT /* 호수 */
+					FROM
+					    COMPLAINTS A, RENT_BLDG B, USERS C, RENT_ROOM D, ROOM E, CNTRCT_RENT F
+					WHERE A.RENT_BLDG_NO = B.RENT_BLDG_NO
+					AND B.USER_NO = #{userNo}
+					AND B.RENT_BLDG_NO = D.RENT_BLDG_NO
+					AND D.ROOM_NO = E.ROOM_NO
+					AND C.USER_NO = A.LESSEE_NO
+					AND F.LESSEE_NO = A.LESSEE_NO
+					AND F.RENT_ROOM_NO = D.RENT_ROOM_NO
+					AND F.CTP_DEL_YN = 'N' ORDER BY A.CVLCP_NO DESC ) G ) H ORDER BY RNUM DESC) S
+ ) K   
+		<![CDATA[ 
+		WHERE KNUM >= #{firstRecord} AND KNUM <= #{lastRecord}
+		]]> 
+					
+
+</select>
+
+<select id="selectTotalRecord" resultType="int" parameterType="kr.or.mat.paging.PaginationInfo">
+SELECT COUNT(*)
+FROM complaints A, RENT_BLDG B
+WHERE A.rent_bldg_no = B.rent_bldg_no
+AND B.USER_NO = #{userNo}
+AND A.CVLCP_DEL_YN = 'N'
+</select>
+
+<select id="selectComplaints" resultMap="LessorComplaintsMap" parameterType="string">
+		SELECT
+					    A.CVLCP_DEL_YN  /* 민원삭제여부*/ 
+					    ,A.CVLCP_DT  /* 민원작성일시*/ 
+					    ,TO_CHAR(A.CVLCP_HOPE_DT, 'YYYY-MM-DD HH24:MI') CVLCP_HOPE_DT  /* 민원처리희망일시*/ 
+					    ,A.CVLCP_NO  /* 민원번호*/ 
+					    ,A.CVLCP_CN  /* 민원내용*/ 
+					    ,A.CVLCP_ANS  /* 민원답변*/ 
+					    ,( SELECT C.CMMN_CD_NM FROM CMMN_CODE C WHERE
+							A.CVLCP_KND = C.CMMN_CD
+						) CVLCP_KND  /* 민원종류*/ 
+					    ,( SELECT C.CMMN_CD_NM FROM CMMN_CODE C WHERE
+							A.CVLCP_STTS = C.CMMN_CD
+						) CVLCP_STTS  /* 처리상태*/ 
+					    ,A.UNITY_ATCHMNFL_NO  /* 통합첨부파일번호*/ 
+					    ,A.RENT_BLDG_NO  /* 임대관리건물등록번호*/ 
+					    ,A.LESSEE_NO  /* 민원작성자*/ 
+					    ,A.LESSOR_NO  /* 민원처리자*/
+					    ,TO_CHAR(A.CVLCP_OK_DT, 'YYYY-MM-DD HH24:MI') CVLCP_OK_DT /* 처리일시 */
+					    ,B.BLDG_NM /* 건물 명 */
+					    ,C.USER_NM /* 임차인 이름 */
+					    ,E.ROOM_UNIT /* 호수 */
+					FROM
+					    COMPLAINTS A, RENT_BLDG B, USERS C, RENT_ROOM D, ROOM E, CNTRCT_RENT F
+					WHERE A.RENT_BLDG_NO = B.RENT_BLDG_NO
+					AND B.RENT_BLDG_NO = D.RENT_BLDG_NO
+					AND D.ROOM_NO = E.ROOM_NO
+					AND C.USER_NO = A.LESSEE_NO
+					AND F.LESSEE_NO = A.LESSEE_NO
+					AND F.RENT_ROOM_NO = D.RENT_ROOM_NO
+					AND F.CTP_DEL_YN = 'N'
+					AND CVLCP_NO = #{cvlcpNo}
+	</select>
+	
+	<update id="insertComplaintsAnswer" parameterType="LessorComplaintsVO">
+	UPDATE COMPLAINTS
+	SET 
+	LESSOR_NO = #{lessorNo},
+	CVLCP_OK_DT = TO_DATE(#{cvlcpOkDt,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI'),
+	CVLCP_STTS = #{cvlcpStts},
+	CVLCP_ANS = #{cvlcpAns}
+	WHERE CVLCP_NO = #{cvlcpNo}
+	</update>
+	
+	<update id="deleteComplaintsAnswer" parameterType="LessorComplaintsVO">
+	UPDATE COMPLAINTS
+	SET CVLCP_ANS = '',
+	CVLCP_OK_DT = '',
+	LESSOR_NO = '',
+	CVLCP_STTS = 'COMSTTR01'
+	
+	WHERE CVLCP_NO = #{cvlcpNo}
+	AND LESSOR_NO = #{lessorNo}
+	</update>
+	
+	<update id="updateComplaintsAnswer" parameterType="LessorComplaintsVO">
+	UPDATE COMPLAINTS
+	SET CVLCP_ANS = #{cvlcpAns},
+	CVLCP_OK_DT = TO_DATE(#{cvlcpOkDt,jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI'),
+	CVLCP_STTS = #{cvlcpStts}
+	WHERE CVLCP_NO = #{cvlcpNo}
+	AND LESSOR_NO = #{lessorNo}
+	</update>
+	
+</mapper>

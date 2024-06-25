@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd" >
+<tiles-definitions>
+	<!-- 관리자 폼 -->
+	<definition name="parentA" template="/WEB-INF/views/templateBS.jsp">
+		<put-attribute name="preScript" value="/WEB-INF/includee/mdshub/preScript.jsp" />
+		<put-attribute name="header"  value="/WEB-INF/includee/mdshub/header.jsp" />
+		<put-attribute name="leftMenu"  value="/WEB-INF/includee/mdshub/leftMenu3.jsp" />
+		
+		<put-attribute name="footer"  value="/WEB-INF/includee/mdshub/footer.jsp" />
+		<put-attribute name="postScript"  value="/WEB-INF/includee/mdshub/postScript.jsp" />
+	</definition>
+	
+	<!-- 관리자 -->
+	<definition name="mds/admin/*" extends="parentA">
+		<put-attribute name="content" value="/WEB-INF/views/mds/admin/{1}.jsp" />
+	</definition>
+	
+	<!-- 거래관리 폼 -->
+	<definition name="parent1" template="/WEB-INF/views/templateBS3.jsp">
+		<put-attribute name="preScript3" value="/WEB-INF/includee/mds/preScript.jsp" />
+		<put-attribute name="header3"  value="/WEB-INF/includee/mds/header.jsp" />
+		
+		<put-attribute name="footer3"  value="/WEB-INF/includee/mds/footer.jsp" />
+		<put-attribute name="postScript3"  value="/WEB-INF/includee/mds/postScript.jsp" />
+	</definition>
+	
+<!-- 	<definition name="mds/*" extends="parent1"> -->
+<!-- 		<put-attribute name="content" value="/WEB-INF/views/mds/{1}.jsp" /> -->
+<!-- 	</definition> -->
+	
+	<definition name="mds/signup/*" extends="parent1">
+		<put-attribute name="content" value="/WEB-INF/views/mds/signup/{1}.jsp" />
+	</definition>
+	
+	<definition name="mds/mypage/*" extends="parent1">
+		<put-attribute name="content" value="/WEB-INF/views/mds/mypage/{1}.jsp" />
+	</definition>
+	
+	<definition name="mds/info/*" extends="parent1">
+		<put-attribute name="content" value="/WEB-INF/views/mds/info/{1}.jsp" />
+	</definition>
+	
+</tiles-definitions>

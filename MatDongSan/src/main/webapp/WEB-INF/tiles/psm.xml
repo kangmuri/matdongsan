@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd" >
+<tiles-definitions>
+	<definition name="parent" template="/WEB-INF/views/templateBS.jsp">
+		<put-attribute name="preScript" value="/WEB-INF/includee/mdshub/preScript.jsp" />
+		<put-attribute name="header"  value="/WEB-INF/includee/mdshub/header.jsp" />
+		<put-attribute name="leftMenu"  value="/WEB-INF/includee/mdshub/leftMenu.jsp" />
+		
+		<put-attribute name="footer"  value="/WEB-INF/includee/mdshub/footer.jsp" />
+		<put-attribute name="postScript"  value="/WEB-INF/includee/mdshub/postScript.jsp" />
+	</definition>
+	
+	<definition name="mdshub/index" extends="parent">
+		<put-attribute name="content" value="/WEB-INF/views/mdshub/index.jsp" />
+	</definition>
+	
+	
+	<definition name="parent1" template="/WEB-INF/views/templateBS3.jsp">
+		<put-attribute name="preScript3" value="/WEB-INF/includee/mds/preScript.jsp" />
+		<put-attribute name="header3"  value="/WEB-INF/includee/mds/header.jsp" />
+		
+		
+		<put-attribute name="footer3"  value="/WEB-INF/includee/mds/footer.jsp" />
+		<put-attribute name="postScript3"  value="/WEB-INF/includee/mds/postScript.jsp" />
+	</definition>
+	
+	<definition name="parentMap" template="/WEB-INF/views/templateMap.jsp">
+		<put-attribute name="preScript3" value="/WEB-INF/includee/mds/preScript.jsp" />
+		<put-attribute name="header3"  value="/WEB-INF/includee/mds/header2.jsp" />
+		<put-attribute name="searchFilter"  value="/WEB-INF/includee/mds/searchFilter.jsp" />
+		
+		<put-attribute name="postScript3"  value="/WEB-INF/includee/mds/postScript.jsp" />
+	</definition>
+	
+	<definition name="mds/*" extends="parent1">
+		<put-attribute name="content" value="/WEB-INF/views/mds/{1}.jsp" />
+	</definition>
+	
+	<definition name="mds/room/*" extends="parent1">
+		<put-attribute name="content" value="/WEB-INF/views/mds/room/{1}.jsp" />
+	</definition>
+	
+	<definition name="mds/search/*" extends="parentMap">
+		<put-attribute name="content" value="/WEB-INF/views/mds/search/{1}.jsp" />
+	</definition>
+	
+	<definition name="mds/contract/*" extends="parent1">
+		<put-attribute name="content" value="/WEB-INF/views/mds/contract/{1}.jsp" />
+	</definition>
+</tiles-definitions>

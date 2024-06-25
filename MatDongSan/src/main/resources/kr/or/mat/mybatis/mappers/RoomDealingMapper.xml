@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.room.mapper.RoomDealingMapper">
+
+	<resultMap id="RoomDealingResultMap" type="RoomDealingVO" autoMapping="true">
+	    <id property="roomDelngNo" column="ROOM_DELNG_NO"/>
+		    
+	    <association property="room" javaType="RoomVO" autoMapping="true">
+	        <id property="roomNo" column="ROOM_NO"/>
+	        <collection property="tbAttachFileList" ofType="TbAttachFileVO" autoMapping="true"/>
+	        <collection property="roomLvlhList" ofType="RoomLvlhVO" autoMapping="true"/>
+	    </association>
+	    
+	</resultMap>
+	
+	<insert id="insertRoomDealing" parameterType="RoomDealingVO">
+		<selectKey keyProperty="roomDelngNo" resultType="String" order="BEFORE">
+  			SELECT 'RD' || TO_CHAR(SYSDATE, 'YYMMDD') || TO_CHAR(roomDealing_seq.NEXTVAL, 'FM000')
+  			FROM DUAL
+		</selectKey>
+		INSERT INTO ROOM_DEALING (
+								    ROOM_DELNG_NO,
+								    ROOM_SIZE,
+								    ROOM_CNT,
+								    LIVING_TYPE,
+								    DELNG_TYPE,
+								    ROOM_LSHL,
+								    ROOM_MHL,
+								    ROOM_DEPOSIT,
+								    ROOM_MANAGECT_PC,
+								    ROOM_MANAGECT_AT,
+								    ROOM_DETAIL_DC_SJ,
+								    ROOM_DETAIL_DC,
+								    ROOM_MVN_POSBL,
+								    ROOM_DEALING_STTS,
+								    ROOM_ASAP_YN,
+								    ROOM_NO,
+								    ROOM_PAS
+		) VALUES (
+								    #{roomDelngNo,jdbcType=VARCHAR},
+								    #{roomSize,jdbcType=NUMERIC},
+								    #{roomCnt,jdbcType=NUMERIC},
+								    #{livingType,jdbcType=VARCHAR},
+								    #{delngType,jdbcType=VARCHAR},
+								    #{roomLshl,jdbcType=NUMERIC},
+								    #{roomMhl,jdbcType=NUMERIC},
+								    #{roomDeposit,jdbcType=NUMERIC},
+								    #{roomManagectPc,jdbcType=NUMERIC},
+								    #{roomManagectAt,jdbcType=VARCHAR},
+								    #{roomDetailDcSj,jdbcType=VARCHAR},
+								    #{roomDetailDc,jdbcType=VARCHAR},
+								    #{roomMvnPosbl,jdbcType=VARCHAR},
+								    'RS01',
+								    #{roomAsapYn, jdbcType=VARCHAR},
+								    #{roomNo,jdbcType=VARCHAR},
+								    #{roomPas,jdbcType=NUMERIC}
+		)
+	</insert>
+	
+	<select id="selectSearchMapList" resultMap="RoomDealingResultMap" parameterType="CoordinateVO">
+		SELECT 
+                RD.ROOM_DELNG_NO
+                , RD.ROOM_SIZE
+                , RD.ROOM_CNT
+                , (
+                      select C.CMMN_CD_NM
+                      from CMMN_CODE C
+                      where RD.LIVING_TYPE = C.CMMN_CD
+                ) LIVING_TYPE
+                , (
+                        select C.CMMN_CD_NM
+                        from CMMN_CODE C
+                        where RD.DELNG_TYPE = C.CMMN_CD
+                  ) DELNG_TYPE
+                , RD.ROOM_LSHL
+                , RD.ROOM_MHL
+                , RD.ROOM_DEPOSIT
+                , RD.ROOM_MANAGECT_PC
+                , RD.ROOM_MANAGECT_AT
+                , RD.ROOM_DETAIL_DC_SJ
+                , RD.ROOM_DETAIL_DC
+                , RD.ROOM_MVN_POSBL
+                , RD.ROOM_DELNG_DE
+                , RD.ROOM_DEALING_STTS
+                , RD.ROOM_OTHBC_YN
+                , RD.ROOM_NO
+                , RD.ROOM_PAS
+                , RD.ROOM_ASAP_YN
+                , R.X
+                , R.Y
+                , R.RENT_AR
+                , (
+                        select C.CMMN_CD_NM
+                        from CMMN_CODE C
+                        where R.ROOM_TY = C.CMMN_CD
+                  ) ROOM_TY
+                , R.UNITY_ATCHMNFL_NO
+                , T.WEB_PATH
+                , (SELECT COUNT(*) FROM ROOM_LIKE RL WHERE  RL.ROOM_DELNG_NO=RD.ROOM_DELNG_NO AND RL.USER_NO=#{userNo, jdbcType=VARCHAR}) LIKE_YN
+        from ROOM_DEALING RD INNER JOIN ROOM R ON(RD.ROOM_NO = R.ROOM_NO) , TB_ATTACH_FILE T
+        <where>
+        	ROOM_OTHBC_YN = 'N' 
+            AND ROOM_DEALING_STTS = 'RS02'
+            AND R.UNITY_ATCHMNFL_NO = T.UNITY_ATCHMNFL_NO
+            AND T.ATCHMNFL_SN = 1
+            AND R.X between #{minX, jdbcType=NUMERIC} and #{maxX, jdbcType=NUMERIC}
+            AND R.Y between #{minY, jdbcType=NUMERIC} and #{maxY, jdbcType=NUMERIC}
+        	
+        	<if test="buildingType.length > 0">
+        		AND R.ROOM_TY IN 
+        		<foreach collection="buildingType" item="roomTy" open="(" close=")" separator=",">
+				#{roomTy, jdbcType=VARCHAR}
+				</foreach>
+        	</if>
+        	<if test="dealingType.length > 0">
+        		AND RD.DELNG_TYPE IN
+        		<foreach collection="dealingType" item="delngTy" open="(" close=")" separator=",">
+				#{delngTy, jdbcType=VARCHAR}
+				</foreach>
+        	</if>
+        	<if test="roomType.length > 0">
+        		AND RD.LIVING_TYPE IN
+        		<foreach collection="roomType" item="roomTy" open="(" close=")" separator=",">
+				#{roomTy, jdbcType=VARCHAR}
+				</foreach>
+        	</if>
+        	<if test="parkingYn != null">
+        		AND R.ROOM_PARKNG_YN = #{parkingYn, jdbcType=VARCHAR}
+        	</if>
+        	<if test="elvtrYn != null">
+        		AND R.ROOM_ELVTR_YN = #{elvtrYn, jdbcType=VARCHAR}
+        	</if>
+        </where>  
+	</select>
+	
+	<select id="selectRoomDealing" parameterType="string" resultMap="RoomDealingResultMap">
+		SELECT 
+                RD.ROOM_DELNG_NO
+                , RD.ROOM_SIZE
+                , RD.ROOM_CNT
+                , ( 
+                        select C.CMMN_CD_NM
+                        from CMMN_CODE C
+                        where RD.LIVING_TYPE = C.CMMN_CD
+                  ) LIVING_TYPE
+                , (
+                        select C.CMMN_CD_NM
+                        from CMMN_CODE C
+                        where RD.DELNG_TYPE = C.CMMN_CD
+                  ) DELNG_TYPE
+                , RD.ROOM_LSHL
+                , RD.ROOM_MHL
+                , RD.ROOM_DEPOSIT
+                , RD.ROOM_MANAGECT_PC
+                , RD.ROOM_MANAGECT_AT
+                , RD.ROOM_DETAIL_DC_SJ
+                , RD.ROOM_DETAIL_DC
+                , RD.ROOM_MVN_POSBL
+                , RD.ROOM_DELNG_DE
+                , (
+                        select C.CMMN_CD_NM
+                        from CMMN_CODE C
+                        where RD.ROOM_DEALING_STTS = C.CMMN_CD
+                  ) ROOM_DEALING_STTS
+                , RD.ROOM_OTHBC_YN
+                , RD.ROOM_NO
+                , RD.ROOM_PAS
+                , RD.ROOM_ASAP_YN
+                , R.BLDG_ADDR
+                , R.REGION_1DEPTH_NM
+                , R.REGION_2DEPTH_NM
+                , R.REGION_3DEPTH_NM
+                , R.BUN
+                , R.JI
+                , R.H_CODE
+                , R.B_CODE
+                , R.X
+                , R.Y
+                , R.FLOOR_CNT
+                , R.RENT_DONG
+                , R.ROOM_FLOOR
+                , R.ROOM_UNIT
+                , R.ROOM_BTR_CNT
+                , R.DCT_LAD_LNDCGR
+                , R.DCT_LAD_AR
+                , R.BULD_AR
+                , R.BULD_PRPOS
+                , R.BULD_MPRPOS
+                , R.RENT_AR
+                , (
+                        select C.CMMN_CD_NM
+                        from CMMN_CODE C
+                        where R.ROOM_TY = C.CMMN_CD
+                  ) ROOM_TY
+                , R.ROOM_PARKNG_YN
+                , R.ROOM_ELVTR_YN
+                , R.UNITY_ATCHMNFL_NO
+                , R.USER_NO
+                , R.BUN
+                , R.JI
+                , R.H_CODE
+                , R.B_CODE
+                , T.WEB_PATH
+                , T.ATCHMNFL_SN
+                , (
+                        select C.CMMN_CD_NM
+                        from CMMN_CODE C
+                        where RL.FCLTY_SE = C.CMMN_CD
+                  ) FCLTY_SE
+                , RL.FCLTY_CD
+        from ROOM_DEALING RD LEFT OUTER JOIN ROOM R ON( RD.ROOM_NO = R.ROOM_NO) RIGHT OUTER JOIN TB_ATTACH_FILE T ON(T.UNITY_ATCHMNFL_NO = R.R.UNITY_ATCHMNFL_NO) RIGHT OUTER JOIN ROOM_LVLH RL ON (RL.ROOM_NO = R.ROOM_NO)
+        WHERE  RD.ROOM_OTHBC_YN = 'N'
+            AND RD.ROOM_DEALING_STTS = 'RS02'
+            AND RD.ROOM_DELNG_NO = #{roomDealingNo, jdbcType=VARCHAR}
+	</select>
+	
+	<update id="updateRoomDealing" parameterType="RoomDealingVO">
+	    UPDATE ROOM_DEALING
+    	<set>
+	    	<if test="roomSize != null">
+	        ROOM_SIZE = #{roomSize, jdbcType=NUMERIC},
+	        </if>
+	        <if test="roomCnt != null">
+	        ROOM_CNT = #{roomCnt, jdbcType=NUMERIC},
+	        </if>
+	        <if test="livingType != null">
+	        LIVING_TYPE = #{livingType, jdbcType=VARCHAR},
+	        </if>
+	        <if test="delngType != null">
+	        DELNG_TYPE = #{delngType, jdbcType=VARCHAR},
+	        </if>
+	        <if test="roomLshl != null">
+	        ROOM_LSHL = #{roomLshl, jdbcType=NUMERIC},
+	        </if>
+	        <if test="roomMhl != null">
+	        ROOM_MHL = #{roomMhl, jdbcType=NUMERIC},
+	        </if>
+	        <if test="roomDeposit != null">
+	        ROOM_DEPOSIT = #{roomDeposit, jdbcType=NUMERIC},
+	        </if>
+	        <if test="roomManagectPc != null">
+	        ROOM_MANAGECT_PC = #{roomManagectPc, jdbcType=NUMERIC},
+	        </if>
+	        <if test="roomManagectAt != null">
+	        ROOM_MANAGECT_AT = #{roomManagectAt, jdbcType=VARCHAR},
+	        </if>
+	        <if test="roomDetailDcSj != null">
+	        ROOM_DETAIL_DC_SJ = #{roomDetailDcSj, jdbcType=VARCHAR},
+	        </if>
+	        <if test="roomDetailDc != null">
+	        ROOM_DETAIL_DC = #{roomDetailDc, jdbcType=VARCHAR},
+	        </if>
+	        <if test="roomMvnPosbl != null">
+	        ROOM_MVN_POSBL = #{roomMvnPosbl, jdbcType=VARCHAR},
+	        </if>
+	        <if test="roomDealingStts != null">
+	        ROOM_DEALING_STTS = #{roomDealingStts, jdbcType=VARCHAR},
+	        </if>
+	        <if test="roomOthbcYn != null">
+	        ROOM_OTHBC_YN = #{roomOthbcYn, jdbcType=VARCHAR},
+	        </if>
+	        <if test="roomAsapYn != null">
+	        ROOM_ASAP_YN = #{roomAsapYn, jdbcType=VARCHAR},
+	        </if>
+	        <if test="roomPas != null">
+	        ROOM_PAS = #{roomPas, jdbcType=NUMERIC}
+	        </if>
+        </set>
+    	WHERE
+        ROOM_DELNG_NO = #{roomDelngNo, jdbcType=VARCHAR}
+	</update>
+	
+
+
+
+
+
+
+
+<sql id="searchFrag">
+		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(simpleCondition.searchWord)">
+			<choose>
+				<when test="simpleCondition.searchType eq 'roomDetailDcSj'">
+					AND INSTR(ROOM_DETAIL_DC_SJ, #{simpleCondition.searchWord}) > 0   
+				</when>
+			</choose>
+		</if>
+</sql>
+<!-- 회원 기준 전체(검색)페이지 수  -->
+<select id="selectTotalRecord" resultType="int" parameterType="kr.or.mat.paging.PaginationInfo">
+	SELECT COUNT(*) /** kr.or.mat.admin.mapper.AdminQnaMapper.selectTotalRecord */
+	 FROM ROOM A LEFT JOIN TB_ATTACH_FILE B ON (A.UNITY_ATCHMNFL_NO = B.UNITY_ATCHMNFL_NO)
+	             LEFT JOIN ROOM_DEALING C ON (A.ROOM_NO = C.ROOM_NO)
+	WHERE USER_NO = #{userNo}
+	<include refid="searchFrag" />
+</select>
+<!-- 마이페이지 내가올린 매물 리스트 조회 -->
+<select id="selectMyRoomList" parameterType="kr.or.mat.paging.PaginationInfo" resultType="MyRoomListVO">
+SELECT B.* /** kr.or.mat.admin.mapper.AdminQnaMapper.selectMyRoomList */
+FROM(
+	SELECT ROWNUM RNUM, A.*
+	FROM(	
+		SELECT
+		     A.ROOM_NO
+		    ,BLDG_ADDR
+		    ,REGION_1DEPTH_NM
+		    ,REGION_2DEPTH_NM
+		    ,REGION_3DEPTH_NM
+		    ,BUN
+		    ,JI
+		    ,H_CODE
+		    ,B_CODE
+		    ,X
+		    ,Y
+		    ,FLOOR_CNT
+		    ,RENT_DONG
+		    ,ROOM_FLOOR
+		    ,ROOM_UNIT
+		    ,ROOM_BTR_CNT
+		    ,DCT_LAD_LNDCGR
+		    ,DCT_LAD_AR
+		    ,BULD_AR
+		    ,BULD_PRPOS
+		    ,BULD_MPRPOS
+		    ,RENT_AR
+		    ,ROOM_TY
+		    ,ROOM_PARKNG_YN
+		    ,ROOM_ELVTR_YN
+		    ,A.UNITY_ATCHMNFL_NO
+		    ,USER_NO
+		    ,B.WEB_PATH
+		    ,ROOM_DETAIL_DC_SJ
+		    ,ROOM_DELNG_DE
+		    ,ROOM_DEALING_STTS
+		    ,ROOM_OTHBC_YN 
+		    ,ROOM_DELNG_NO
+		 FROM ROOM A LEFT JOIN TB_ATTACH_FILE B ON (A.UNITY_ATCHMNFL_NO = B.UNITY_ATCHMNFL_NO)
+		             LEFT JOIN ROOM_DEALING C ON (A.ROOM_NO = C.ROOM_NO)
+		WHERE USER_NO = #{userNo}
+		<include refid="searchFrag"/>
+		  AND B.ATCHMNFL_SN = '1'
+		  AND C.ROOM_OTHBC_YN = 'N'
+		) A
+	) B
+	<![CDATA[ 
+		WHERE RNUM  >= #{firstRecord} AND RNUM <= #{lastRecord}
+	]]>  
+</select>
+
+<select id="selectRoomDealingUserList" parameterType="String" resultMap="RoomDealingResultMap">
+	SELECT A.ROOM_DELNG_NO, CASE 
+							        WHEN LENGTH(A.ROOM_DETAIL_DC_SJ) > 8 THEN SUBSTR(A.ROOM_DETAIL_DC_SJ, 1, 8) || '...'
+							        ELSE A.ROOM_DETAIL_DC_SJ
+    						END AS ROOM_DETAIL_DC_SJ
+	FROM ROOM_DEALING A, ROOM B
+	WHERE A.ROOM_NO = B.ROOM_NO
+	AND A.ROOM_DEALING_STTS IN ('RS01', 'RS02')
+    AND B.USER_NO = #{userNo, jdbcType=VARCHAR}
+</select>
+
+<select id="selectRoomDealingUpdateInfo" parameterType="RoomDealingVO" resultMap="RoomDealingResultMap">
+		SELECT 
+                RD.ROOM_DELNG_NO
+                , RD.ROOM_SIZE
+                , RD.ROOM_CNT
+                , RD.LIVING_TYPE
+                , RD.DELNG_TYPE 
+                , RD.ROOM_LSHL
+                , RD.ROOM_MHL
+                , RD.ROOM_DEPOSIT
+                , RD.ROOM_MANAGECT_PC
+                , RD.ROOM_MANAGECT_AT
+                , RD.ROOM_DETAIL_DC_SJ
+                , RD.ROOM_DETAIL_DC
+                , RD.ROOM_MVN_POSBL
+                , RD.ROOM_DELNG_DE
+                , RD.ROOM_DEALING_STTS
+                , RD.ROOM_OTHBC_YN
+                , RD.ROOM_NO
+                , RD.ROOM_PAS
+                , RD.ROOM_ASAP_YN
+                , R.BLDG_ADDR
+                , R.REGION_1DEPTH_NM
+                , R.REGION_2DEPTH_NM
+                , R.REGION_3DEPTH_NM
+                , R.BUN
+                , R.JI
+                , R.H_CODE
+                , R.B_CODE
+                , R.X
+                , R.Y
+                , R.FLOOR_CNT
+                , R.RENT_DONG
+                , R.ROOM_FLOOR
+                , R.ROOM_UNIT
+                , R.ROOM_BTR_CNT
+                , R.DCT_LAD_LNDCGR
+                , R.DCT_LAD_AR
+                , R.BULD_AR
+                , R.BULD_PRPOS
+                , R.BULD_MPRPOS
+                , R.RENT_AR
+                , R.ROOM_TY
+                , R.ROOM_PARKNG_YN
+                , R.ROOM_ELVTR_YN
+                , R.UNITY_ATCHMNFL_NO
+                , R.USER_NO
+                , T.WEB_PATH
+                , T.ATCHMNFL_SN
+                , RL.FCLTY_SE
+                , RL.FCLTY_CD
+        from ROOM_DEALING RD LEFT OUTER JOIN ROOM R ON( RD.ROOM_NO = R.ROOM_NO) LEFT OUTER JOIN TB_ATTACH_FILE T ON(T.UNITY_ATCHMNFL_NO = R.R.UNITY_ATCHMNFL_NO) LEFT OUTER JOIN ROOM_LVLH RL ON (RL.ROOM_NO = R.ROOM_NO)
+        WHERE  RD.ROOM_OTHBC_YN = 'N'
+            AND RD.ROOM_DEALING_STTS IN ('RS01', 'RS02')
+            AND RD.ROOM_DELNG_NO = #{roomDelngNo, jdbcType=VARCHAR}
+           	AND R.USER_NO = #{room.userNo, jdbcType=VARCHAR}
+	</select>
+</mapper>

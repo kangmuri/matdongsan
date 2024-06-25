@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.chat.mapper.ChattingRoomMapper">
+
+
+<insert id="insertChattingRoomVO" parameterType="ChattingRoomVO">
+	<selectKey keyProperty="chttRoomNo" resultType="String" order="BEFORE">
+ 			SELECT 'CT' || TO_CHAR(SYSDATE, 'YYMMDD') || TO_CHAR(chatroom_seq.NEXTVAL, 'FM000')
+ 			FROM DUAL
+	</selectKey>
+	INSERT INTO CHATTING_ROOM(
+								CHTT_ROOM_NO
+								, GUEST_NO
+								, HOST_NO
+								)
+   				VALUES (
+   						#{chttRoomNo, jdbcType=VARCHAR}
+   						,#{guestNo, jdbcType=VARCHAR}
+   						,#{hostNo, jdbcType=VARCHAR}
+   				)
+</insert>
+<select id="selectChattingRoomList" parameterType="ChattingRoomVO" resultType="ChattingRoomVO">
+	    SELECT DISTINCT
+    			C.CHTT_ROOM_NO,
+			    C.CHTT_DEL_YN,
+			    C.GUEST_NO,
+			    GUEST.USER_NM AS GUEST_NM,
+			    C.HOST_NO,
+			    HOST.USER_NM AS HOST_NM,
+			    GUEST_TB.WEB_PATH AS GUEST_WEBPATH,
+			    HOST_TB.WEB_PATH AS HOST_WEBPATH
+			FROM 
+			    CHATTING_ROOM C
+			LEFT JOIN 
+			    USERS GUEST ON C.GUEST_NO = GUEST.USER_NO
+			LEFT JOIN 
+			    USERS HOST ON C.HOST_NO = HOST.USER_NO
+			LEFT JOIN 
+			    TB_ATTACH_FILE GUEST_TB ON GUEST.UNITY_ATCHMNFL_NO = GUEST_TB.UNITY_ATCHMNFL_NO
+			LEFT JOIN 
+			    TB_ATTACH_FILE HOST_TB ON HOST.UNITY_ATCHMNFL_NO = HOST_TB.UNITY_ATCHMNFL_NO
+			WHERE 
+			    (C.HOST_NO = #{hostNo, jdbcType=VARCHAR} 
+			     OR C.GUEST_NO = #{hostNo, jdbcType=VARCHAR} )
+			    AND C.CHTT_DEL_YN = 'N'
+</select>
+
+<select id="selectChattingRoom" parameterType="ChattingRoomVO" resultType="ChattingRoomVO">
+	SELECT 
+			CHTT_ROOM_NO
+			, CHTT_DEL_YN
+			, GUEST_NO
+			, HOST_NO
+	FROM CHATTING_ROOM
+	WHERE HOST_NO IN(#{hostNo, jdbcType=VARCHAR} ,#{guestNo, jdbcType=VARCHAR})
+	AND GUEST_NO IN(#{hostNo, jdbcType=VARCHAR} ,#{guestNo, jdbcType=VARCHAR})
+</select>
+
+<insert id="insertVisitSchedule" parameterType="ScheduleVO">
+	<selectKey keyProperty="schdulNo" resultType="String" order="BEFORE">
+ 			SELECT 'SC' || TO_CHAR(SYSDATE, 'YYMMDD') || TO_CHAR(schedule_seq.NEXTVAL, 'FM000')
+ 			FROM DUAL
+	</selectKey>
+	INSERT INTO SCHEDULE (
+		SCHDUL_NO
+		, SCHDUL_SJ
+		, SCHDUL_BGNDE
+		, USER_NO
+		, CHTT_ROOM_NO
+	)
+	VALUES(
+		#{schdulNo, jdbcType=VARCHAR}
+		,#{schdulSj, jdbcType=VARCHAR}
+		,TO_DATE(#{schdulBgnde, jdbcType=VARCHAR}, 'YYYY-MM-DD HH24:MI')
+		,#{userNo, jdbcType=VARCHAR}
+		,#{chttRoomNo, jdbcType=VARCHAR}
+	)	
+</insert>
+</mapper>

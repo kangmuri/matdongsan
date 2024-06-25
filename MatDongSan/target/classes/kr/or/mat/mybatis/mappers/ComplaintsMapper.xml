@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.lessee.complaints.mapper.ComplaintsMapper">
+<resultMap type="ComplaintsVO" id="complaintsMap" autoMapping="true">
+	<association property="rentBldg" javaType="RentBldgVO" autoMapping="true">
+		<collection property="rentRoomList" ofType="RentRoomVO">
+			<collection property="rentContractList" ofType="RentContractVO"></collection>
+		</collection>
+	</association>
+	<association property="users" javaType="UserVO" autoMapping="true">
+	</association>
+</resultMap>
+	<sql id="searchFrag">
+		<trim prefix="AND" prefixOverrides="AND">
+			<if test="not detailConditions.empty">
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.rentBldgNo)">
+					AND INSTR(RENT_BLDG_NO, #{detailConditions.rentBldgNo}) > 0
+				</if>
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.cvlcpCn)">
+					AND INSTR(CVLCP_CN, #{detailConditions.cvlcpCn}) > 0
+				</if>
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.cvlcpKnd)">
+					AND INSTR(CVLCP_KND, #{detailConditions.cvlcpKnd}) > 0
+				</if>
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.cvlcpStts)">
+					AND INSTR(CVLCP_STTS, #{detailConditions.cvlcpStts}) > 0
+				</if>
+			</if>
+		</trim>
+	</sql>
+	
+	
+	<select id="selectBldgList" resultMap="complaintsMap" parameterType="string">
+		WITH BLDG AS(
+		 SELECT BLDG_NM, RENT_BLDG.RENT_BLDG_NO AS RENT_BLDG_NO, RENT_ROOM_NO
+		 FROM RENT_ROOM RIGHT OUTER JOIN RENT_BLDG ON(RENT_ROOM.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+		)
+		SELECT BLDG_NM, RENT_BLDG_NO
+		FROM CNTRCT_RENT INNER JOIN BLDG ON(CNTRCT_RENT.RENT_ROOM_NO = BLDG.RENT_ROOM_NO)
+		WHERE LESSEE_NO = #{lesseeNo}
+	</select>
+	
+	<update id="deleteComplaints" parameterType="string">
+		UPDATE complaints
+		    SET
+		        CVLCP_DEL_YN = 'Y'
+			WHERE
+		    	cvlcp_no = #{cvlcpNo}
+	</update>
+
+	<update id="updateComplaints" parameterType="ComplaintsVO">
+		UPDATE complaints
+		    SET
+		        CVLCP_CN = #{cvlcpCn},
+		        CVLCP_HOPE_DT =to_date(#{cvlcpHopeDt,jdbcType=VARCHAR}, 'YYYY-MM-DD"T"HH24:MI'),
+		        CVLCP_KND = #{cvlcpKnd}
+			WHERE
+		    	cvlcp_no = #{cvlcpNo}
+	</update>
+
+	<insert id="insertComplaints" parameterType="ComplaintsVO">
+		<selectKey order="BEFORE" resultType="string" keyProperty="cvlcpNo">
+		SELECT 'COM' || LPAD(NVL(TO_NUMBER(SUBSTR(MAX(CVLCP_NO), 5)), 0)+1, 3, '0')
+		FROM COMPLAINTS
+		</selectKey>
+		INSERT INTO complaints (
+		    cvlcp_no,
+		    cvlcp_cn,
+		    cvlcp_knd,
+		    cvlcp_stts,
+		    unity_atchmnfl_no,
+		    rent_bldg_no,
+		    lessee_no,
+		    CVLCP_HOPE_DT,
+		    CVLCP_DT
+		) VALUES (
+		     #{cvlcpNo, jdbcType=VARCHAR}
+			, #{cvlcpCn,jdbcType=VARCHAR}
+			, #{cvlcpKnd,jdbcType=VARCHAR}
+			, 'COMSTTR01'
+			, 'TA240529077'
+			, #{rentBldgNo,jdbcType=VARCHAR}
+			, #{lesseeNo,jdbcType=VARCHAR}
+			,to_date(#{cvlcpHopeDt,jdbcType=VARCHAR}, 'YYYY-MM-DD"T"HH24:MI')
+			,SYSDATE
+		)
+	</insert>
+	
+	<select id="selectTotalRecord" resultType="int" parameterType="kr.or.mat.paging.PaginationInfo">
+		SELECT COUNT(*)
+	    FROM COMPLAINTS
+	    WHERE LESSEE_NO = #{detailConditions.lesseeNo, jdbcType=VARCHAR} 
+	    	  AND CVLCP_DEL_YN = 'N'
+	    <include refid="searchFrag"/>
+	</select>
+	<select id="selectListComplaints" resultMap="complaintsMap" parameterType="kr.or.mat.paging.PaginationInfo">
+		SELECT B.*
+		FROM
+	       (SELECT ROWNUM RNUM, A.*
+			FROM(
+					SELECT CVLCP_NO
+	                ,
+	                CASE 
+	                   WHEN LENGTH(CVLCP_CN) > 15 THEN SUBSTR(CVLCP_CN, 1, 15) || '...'
+	                   ELSE CVLCP_CN
+	                END AS CVLCP_CN
+	                ,CVLCP_ANS
+	                ,(
+				    SELECT CMMN_CD_NM
+				    FROM CMMN_CODE
+				    WHERE cvlcp_knd = CMMN_CD
+				    ) CVLCP_KND
+	                ,(
+					    SELECT CMMN_CD_NM
+					    FROM CMMN_CODE
+					    WHERE CVLCP_STTS = CMMN_CD
+				    ) CVLCP_STTS
+	                ,COMPLAINTS.UNITY_ATCHMNFL_NO
+	                ,RENT_BLDG_NO
+	                ,LESSEE_NO
+	                ,LESSOR_NO
+	                ,USERS.USER_ID as USER_ID
+	                ,TO_CHAR(CVLCP_HOPE_DT, 'YYYY-MM-DD HH24:MI') as CVLCP_HOPE_DT
+	                FROM COMPLAINTS LEFT OUTER JOIN USERS ON(COMPLAINTS.LESSOR_NO = USERS.USER_NO)
+	                WHERE LESSEE_NO = #{detailConditions.lesseeNo, jdbcType=VARCHAR} AND CVLCP_DEL_YN = 'N'
+	                <include refid="searchFrag"/>
+					ORDER BY CVLCP_DT DESC
+				) A
+		 ) B
+		 <![CDATA[ 
+			WHERE RNUM  >= #{firstRecord} AND RNUM <= #{lastRecord}
+		]]> 
+	</select>
+	<select id="selectComplaints" resultMap="complaintsMap" parameterType="string">
+		SELECT CVLCP_NO
+        ,CVLCP_CN
+        ,CVLCP_ANS
+        ,(
+		    SELECT CMMN_CD_NM
+		    FROM CMMN_CODE
+		    WHERE cvlcp_knd = CMMN_CD
+		    ) CVLCP_KND
+        ,(
+		    SELECT CMMN_CD_NM
+		    FROM CMMN_CODE
+		    WHERE CVLCP_STTS = CMMN_CD
+		    ) CVLCP_STTS
+        ,COMPLAINTS.UNITY_ATCHMNFL_NO AS UNITY_ATCHMNFL_NO
+        ,COMPLAINTS.RENT_BLDG_NO AS RENT_BLDG_NO
+        ,LESSEE_NO 
+        ,LESSOR_NO
+        ,CVLCP_HOPE_DT
+        ,BLDG_NM
+        ,USER_NM
+		FROM COMPLAINTS INNER JOIN RENT_BLDG ON(COMPLAINTS.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+                        INNER JOIN USERS ON(COMPLAINTS.LESSEE_NO = USERS.USER_NO)
+		WHERE CVLCP_NO = #{cvlcpNo}
+	</select>
+</mapper>

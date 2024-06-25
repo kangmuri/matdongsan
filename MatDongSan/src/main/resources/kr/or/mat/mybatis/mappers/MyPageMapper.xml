@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.mypage.mapper.MyPageMapper">
+
+
+	<!-- 올린 매물 갯수 조회 -->
+	<select id="selectRoomCount" parameterType="String" resultType="int">
+		SELECT COUNT(*) /** kr.or.mat.mypage.mapper.MyPageMapper.selectRoomCount */
+		FROM ROOM
+		WHERE USER_NO = #{userNo}
+	</select>
+
+	<!-- 진행중 계약 횟수(임대인기준) -->
+	<select id="selectRoomDealingLessor" parameterType="String" resultType="int">
+		SELECT COUNT(*) /** kr.or.mat.mypage.mapper.MyPageMapper.selectRoomDealingLessor */
+		  FROM CNTRCT_DEALING
+		 WHERE DCT_STTS = 'RS03'
+		   AND LESSOR_USER_NO = #{userNo}
+	</select>
+	
+	<!-- 진행중 계약 횟수(임차인기준) -->
+	<select id="selectRoomDealingLessee" parameterType="String" resultType="int">
+		SELECT COUNT(*) /** kr.or.mat.mypage.mapper.MyPageMapper.selectRoomDealingLessee */
+		  FROM CNTRCT_DEALING
+		 WHERE DCT_STTS = 'RS03'
+		   AND LESSEE_USER_NO = #{userNo}
+	</select>
+	
+	<!-- 허위매물 신고 횟수 -->
+
+	<!-- 1:1 문의글 리스트 -->
+	<select id="selectQnaList" parameterType="String" resultType="QnaVO">
+		SELECT B.* /** kr.or.mat.mypage.mapper.MyPageMapper.selectQnaList */
+		FROM(
+			SELECT ROWNUM RNUM, A.*
+			FROM(
+				SELECT 
+				     PST_NO, PST_SJ, PST_CN
+				    ,PST_RDCNT, PST_WRT_DE, PST_UPDDE_DT
+				    ,PST_DEL_DT, PST_MNGR_YN, PST_OTHBC_YN
+				    ,PST_DEL_YN, C.UNITY_ATCHMNFL_NO, BOARD_NO
+				    ,C.USER_NO, USER_NM
+				FROM POSTING C INNER JOIN USERS D ON (C.USER_NO = D.USER_NO)
+				 AND C.USER_NO = #{userNo,jdbcType=VARCHAR}
+				 AND PST_DEL_YN = 'N'
+				 AND BOARD_NO = 'B001'
+				ORDER BY PST_NO DESC
+			) A
+		) B
+		<![CDATA[
+			WHERE RNUM  >= 1 AND RNUM <= 5
+		]]>
+	</select>
+	
+	<!-- 찜 목록 리스트 -->
+	<select id="selectRoomLikeList" parameterType="String" resultType="MyRoomLikeVO">
+		SELECT B.* /** kr.or.mat.mypage.mapper.MyPageMapper.selectRoomLikeList */
+		FROM(
+			SELECT ROWNUM RNUM, A.*
+			FROM(	
+		        SELECT 
+		             ROOM_LIKE_NO
+		            ,ROOM_LIKE_DT
+		            ,A.USER_NO
+		            ,A.ROOM_DELNG_NO
+		            ,ROOM_SIZE
+		            ,ROOM_CNT
+		            ,LIVING_TYPE
+		            ,DELNG_TYPE
+		            ,ROOM_LSHL
+		            ,ROOM_MHL
+		            ,ROOM_DEPOSIT
+		            ,ROOM_MANAGECT_PC
+		            ,ROOM_MANAGECT_AT
+		            ,ROOM_DETAIL_DC_SJ
+		            ,ROOM_DETAIL_DC
+		            ,ROOM_MVN_POSBL
+		            ,ROOM_DELNG_DE
+		            ,ROOM_DEALING_STTS
+		            ,ROOM_OTHBC_YN
+		            ,B.ROOM_NO
+		            ,ROOM_PAS
+		            ,ROOM_ASAP_YN
+		            ,C.UNITY_ATCHMNFL_NO
+		            ,D.WEB_PATH
+		            ,REGION_1DEPTH_NM
+		            ,REGION_2DEPTH_NM
+		            ,REGION_3DEPTH_NM
+		         FROM ROOM_LIKE A
+		         LEFT JOIN ROOM_DEALING B ON (A.ROOM_DELNG_NO = B.ROOM_DELNG_NO)
+		         LEFT JOIN ROOM C ON (B.ROOM_NO = C.ROOM_NO)
+		         LEFT JOIN TB_ATTACH_FILE D ON (C.UNITY_ATCHMNFL_NO = D.UNITY_ATCHMNFL_NO)
+		        WHERE A.USER_NO = #{userNo,jdbcType=VARCHAR}
+		          AND D.ATCHMNFL_SN = '1'
+				) A
+			) B
+		<![CDATA[
+			WHERE RNUM  >= 1 AND RNUM <= 5
+		]]>
+	</select>
+	
+</mapper>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.lessee.community.mapper.CommCommentMapper">
+<resultMap type="CommentsVO" id="commentMap" autoMapping="true">
+	<id property="cmntNo" column="CMNT_NO"/>
+	<association property="user" javaType="UserVO" autoMapping="true"/>
+</resultMap>
+<!-- 댓글조회 -->
+<select id="selectCommentList" resultMap="commentMap" parameterType="string">
+SELECT 
+    CMNT_NO
+    ,CMNT_WRT_DT
+    ,CMNT_CN
+    ,CMNT_UPDDE_DT
+    ,CMNT_DEL_DT
+    ,CMNT_DEL_YN
+    ,PST_NO
+    ,USER_NO_CMNT
+    ,USER_ID
+FROM COMMENTS INNSER JOIN USERS ON(USER_NO = USER_NO_CMNT)
+WHERE CMNT_DEL_YN = 'N' AND PST_NO = #{pstNo}
+</select>
+
+<!-- 댓글등록 -->
+<insert id="insertComment" parameterType="CommentsVO">
+<selectKey order="BEFORE" resultType="string" keyProperty="cmntNo">
+   SELECT 
+   'CM'
+   ||TO_NUMBER(TO_CHAR(SYSDATE, 'YYMMDD'))
+   ||LPAD(NVL(TO_NUMBER(SUBSTR(MAX(CMNT_NO),9)),0)+1,3,'0') 
+   FROM COMMENTS
+</selectKey>
+INSERT INTO comments (
+    cmnt_no,
+    cmnt_wrt_dt,
+    cmnt_cn,
+    cmnt_del_yn,
+    pst_no,
+    user_no_cmnt
+) VALUES (
+    #{cmntNo}
+    ,sysdate
+    ,#{cmntCn}
+    ,'N'
+    ,#{pstNo}
+    ,#{userNoCmnt}
+)
+</insert>
+
+<!-- 댓글수정 -->
+<update id="updateComment" parameterType="CommentsVO">
+UPDATE comments
+    SET
+       CMNT_CN = #{cmntCn}
+      ,CMNT_UPDDE_DT = SYSDATE 
+WHERE cmnt_no = #{cmntNo}
+</update>
+
+<!-- 댓글삭제 -->
+<update id="deleteComment" parameterType="string">
+UPDATE comments
+    SET
+        cmnt_del_yn = 'Y'
+WHERE
+    cmnt_no = #{cmntNo}
+</update>
+</mapper>
+

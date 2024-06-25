@@ -1,0 +1,47 @@
+@charset "UTF-8";
+
+
+#calendar {
+            width: 70vw;
+            height: 70vh;
+            margin: 80px auto;
+            margin-right:110px;
+        }
+
+        #yrModal{
+            position: fixed;
+            width: 50%;
+            height: 100%;
+            display: none;
+/*             z-index: 1000; */
+        }
+
+        #cont {
+            margin: 100px auto;
+            width: 350px;
+            height: 500px;
+            background-color: rgb(233, 135, 255);
+            color: yellow;
+            border-radius: 25px;
+            
+        }
+        
+        #schDetail {
+        	position: absolute;
+		    width: 36%;
+		    height: 49%;
+		    background-color: white;
+		    left: 38%;
+		    top: 25%;
+		    z-index: 1000;
+		}
+		
+		.cont {
+            margin: 100px auto;
+            width: 350px;
+            height: 500px;
+            background-color: white;
+            color: yellow;
+            border-radius: 25px;
+            
+        }

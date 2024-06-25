@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.mypage.mapper.MyAccountMapper">
+	<select id="selectAccount" parameterType="String">
+		SELECT
+	        USER_NO, USER_NM, USER_ID, USER_PW, 
+	        USER_EMAIL, USER_MBTLNUM, USER_SEXDSTN, USER_BIR, 
+	        USER_CREAT_ON, USER_LAST_LOGIN_DE, USER_RENT_YN, 
+	        USER_SE, USER_DEL_YN, UNITY_ATCHMNFL_NO
+		  FROM USERS 
+		 WHERE USER_NO = #{userNo}
+	</select>
+	
+	<select id="selectAccount2" parameterType="String">
+		SELECT
+	        USER_NO, USER_NM, USER_ID, USER_PW, 
+	        USER_EMAIL, USER_MBTLNUM, USER_SEXDSTN, USER_BIR, 
+	        USER_CREAT_ON, USER_LAST_LOGIN_DE, USER_RENT_YN, 
+	        USER_SE, USER_DEL_YN, A.UNITY_ATCHMNFL_NO, WEB_PATH
+		  FROM USERS A JOIN TB_ATTACH_FILE B ON (USER_NO = REG_USER_ID)
+		 WHERE USER_NO = #{userNo}
+		 AND A.UNITY_ATCHMNFL_NO = B.UNITY_ATCHMNFL_NO
+	</select>
+</mapper>

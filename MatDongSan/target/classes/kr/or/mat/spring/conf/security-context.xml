@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-5.8.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	
+	<bean id="passwordEncoder" class="org.springframework.security.crypto.factory.PasswordEncoderFactories" factory-method="createDelegatingPasswordEncoder"></bean>
+	<bean id="testEncoder" class="org.springframework.security.crypto.password.NoOpPasswordEncoder"></bean>
+	<bean id="loginSuccessController" class="kr.or.mat.login.controller.LoginSuccessController"/>
+	
+	<security:authentication-manager>
+		<security:authentication-provider user-service-ref="customUserDetailsService">
+			<security:password-encoder ref="passwordEncoder"/>
+		</security:authentication-provider>
+		</security:authentication-manager>
+		<security:http pattern="/resources/**" security="none"/>
+		
+		<security:http>
+			<security:form-login login-page="/login"
+				authentication-success-handler-ref="loginSuccessController"
+				username-parameter="userId"
+				password-parameter="userPw"/>
+			<security:logout 
+				logout-url="/logout" 
+				logout-success-url="/"
+				invalidate-session="true"/>
+			<security:csrf disabled="true"/>
+			<!-- ============= mypage ============= -->
+			<security:intercept-url pattern="/login" access="isAnonymous()"/>
+			<security:intercept-url pattern="/authUser" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/logout" access="isAuthenticated()"/>
+			
+			<!-- ============= mypage ============= -->
+			<security:intercept-url pattern="/mypage" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/profile" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/roomLike" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/myContract" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/myRoom" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/roomReport" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/qna" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/qnaDetail" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/qnaDetail/**" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/myChatting" access="isAuthenticated()"/>
+			
+			<!-- ============= 관리자 ============= -->
+			<security:intercept-url pattern="/admin" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/adminUser" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/adminUser/**" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/adminQna" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/adminQna/**" access="isAuthenticated()"/>
+			<security:intercept-url pattern="/adminQnaDetail/**" access="isAuthenticated()"/>
+			
+			<!-- ============= 임대관리 시스템 ============= -->
+			<security:intercept-url pattern="/hubMain" access="isAuthenticated()"/>
+			
+			<!-- ============= 방등록 ============= -->
+			<security:intercept-url pattern="/room" access="isAuthenticated()"/>
+			
+			<security:intercept-url pattern="/**" access="permitAll()"/>
+	</security:http>
+	
+	
+		<!-- 일반 자바에서도 security적용 가능 -->
+		<security:global-method-security pre-post-annotations="enabled"/>
+	
+</beans>

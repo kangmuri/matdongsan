@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.lessee.schedule.mapper.ScheduleMapper">
+	<resultMap type="ScheduleVO" id="scheduleMap" autoMapping="true">
+		<association property="users" javaType="UserVO" autoMapping="true">
+			<collection property="cntrctList" ofType="CntrctRentVO" autoMapping="true">
+				<association property="rentRoom" javaType="RentRoomVO" autoMapping="true">
+					<association property="room" javaType="RoomVO" autoMapping="true"/>
+					<association property="rentBldg" javaType="RentBldgVO" autoMapping="true"/>
+				</association>
+				<collection property="payDataList" ofType="PayDataVO" autoMapping="true"/>
+			</collection>
+		</association>
+	</resultMap>
+
+<!-- <select id="selectScheduleNo" resultType="string" parameterType="int"> -->
+<!-- 	SELECT 'SC' || TO_CHAR(SYSDATE, 'YYMMDD') || TO_CHAR(schedule_seq.NEXTVAL, 'FM000') -->
+<!-- 	FROM DUAL -->
+<!-- </select> -->
+
+<insert id="insertSchedule" parameterType="ScheduleVO">
+<selectKey keyProperty="schdulNo" resultType="String" order="BEFORE">
+			SELECT 'SC' || TO_CHAR(SYSDATE, 'YYMMDD') || TO_CHAR(schedule_seq.NEXTVAL, 'FM000')
+			FROM DUAL
+</selectKey>
+INSERT INTO schedule (
+    schdul_no,
+    schdul_sj,
+    schdul_cn,
+    schdul_bgnde,
+    schdul_endde,
+    user_no,<!-- 임차인번호  -->
+    pay_no
+) VALUES (
+    #{schdulNo},
+    #{users.cntrctList[0].rentRoom.rentBldg.bldgNm}||' '||#{users.cntrctList[0].rentRoom.room.roomUnit}||'호 '|| #{users.cntrctList[0].payDataList[0].blNm},
+    #{users.userId}||' '||#{users.cntrctList[0].rentRoom.rentBldg.bldgNm}||' '||#{users.cntrctList[0].rentRoom.room.roomUnit}||'호 '||#{users.cntrctList[0].dctClsf} ||'/'|| #{users.cntrctList[0].payDataList[0].rqestAmt},
+    TO_DATE(#{users.cntrctList[0].payDataList[0].dedtDe}, 'YY-MM-DD'),
+    TO_DATE(#{users.cntrctList[0].payDataList[0].dedtDe}, 'YY-MM-DD'),
+    #{users.cntrctList[0].lesseeNo},
+    #{payNo}
+         
+)
+</insert>
+<!-- 임차인 본인의 일정 조회 -->
+<select id="selectScheduleList" resultType="ScheduleVO" parameterType="string">
+SELECT *
+FROM SCHEDULE 
+WHERE USER_NO = #{userNo}
+</select>
+
+	<!-- 임대인이 보유하고 있는 임차인들의 일정 조회 -->
+<select id="selectScheduleLessorList" resultType="ScheduleVO" parameterType="string">
+SELECT SCHDUL_NO
+        ,SCHDUL_SJ
+        ,SCHDUL_CN
+        ,SCHDUL_BGNDE
+        ,SCHDUL_ENDDE
+        ,SCHDUL_DEL_YN
+        ,SCHEDULE.USER_NO AS USER_NO
+FROM USERS LEFT OUTER JOIN SCHEDULE ON(USERS.USER_NO = SCHEDULE.USER_NO)
+WHERE SCHEDULE.PAY_NO IN  (WITH PAY_VIEW AS(
+                                SELECT *
+                                FROM CNTRCT_RENT LEFT OUTER JOIN PAY_DATA ON(CNTRCT_RENT.CNTRCT_RENT_NO = PAY_DATA.CNTRCT_RENT_NO)
+                                )                       
+                                SELECT PAY_NO
+                                FROM RENT_ROOM INNER JOIN ROOM ON(RENT_ROOM.ROOM_NO = ROOM.ROOM_NO)
+                                               INNER JOIN PAY_VIEW ON(RENT_ROOM.RENT_ROOM_NO = PAY_VIEW.RENT_ROOM_NO)
+                                WHERE ROOM.USER_NO =#{userNo})
+ </select>                       
+<!-- 임대인이 보유하고있는 임차인들의 납부데이터정보 조회  -->
+<select id="selectPayDataLessorList" parameterType="string" resultMap="scheduleMap">
+WITH ROOM_VIEW AS(
+SELECT *
+FROM RENT_ROOM INNER JOIN ROOM ON(ROOM.ROOM_NO = RENT_ROOM.ROOM_NO)
+               INNER JOIN RENT_BLDG ON(RENT_ROOM.RENT_BLDG_NO = RENT_BLDG.RENT_BLDG_NO)
+WHERE ROOM.USER_NO = #{userNo}
+)
+SELECT LESSEE_NO
+       ,PAY_NO
+       ,BL_NM
+       ,RQEST_AMT
+       ,TO_CHAR(DEDT_DE, 'YY-MM-DD') as DEDT_DE
+       ,TO_CHAR(PAY_DE, 'YY-MM-DD') as PAY_DE
+       ,PAY_STTS
+       ,CNTRCT_RENT.CNTRCT_RENT_NO AS CNTRCT_RENT_NO
+       ,CNTRCTR_NM
+       ,USER_ID
+       ,(
+       SELECT CMMN_CD_NM
+       FROM CMMN_CODE
+       WHERE DCT_CLSF = CMMN_CD
+       ) DCT_CLSF
+       ,BLDG_NM
+       ,ROOM_UNIT
+FROM CNTRCT_RENT INNER JOIN ROOM_VIEW ON(CNTRCT_RENT.RENT_ROOM_NO = ROOM_VIEW.RENT_ROOM_NO)
+                 RIGHT OUTER JOIN PAY_DATA ON(CNTRCT_RENT.CNTRCT_RENT_NO = PAY_DATA.CNTRCT_RENT_NO)	
+                 INNER JOIN USERS ON(CNTRCT_RENT.LESSEE_NO = USERS.USER_NO)
+WHERE LESSEE_NO IS NOT NULL
+</select>
+<!-- 납부데이터가 스케줄 테이블에 존재하는지 중복 체크  -->
+<select id="selectPayDataCheck" parameterType="string" resultType="int">
+SELECT count(*)
+FROM schedule
+WHERE pay_no = #{payNo}
+</select>
+</mapper>

@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.lessee.community.mapper.CommunityMapper">
+<resultMap type="CommunityVO" id="communityMap" autoMapping="true">
+	<id property="pstNo" column="PST_NO"/>
+	<association property="users" javaType="UserVO" autoMapping="true">
+		<collection property="cntrctList" ofType="CntrctRentVO" autoMapping="true">
+			<association property="rentRoom" javaType="RentRoomVO" autoMapping="true">
+				<association property="room" javaType="RoomVO" autoMapping="true"/>
+			</association>
+		</collection>
+	</association>
+	<association property="board" javaType="BoardVO" autoMapping="true"/>
+	<collection property="commentList" ofType="CommentsVO" autoMapping="true"/>
+	<collection property="postingReportList" ofType="PostingReportVO" autoMapping="true"/>
+	<collection property="attachFileList" ofType="TbAttachFileVO" autoMapping="true"/>
+</resultMap>
+
+<sql id="searchFrag">
+	<trim prefix="AND" prefixOverrides="AND"><!-- prefix: <trim>문 안의 쿼리 가장 앞에 붙여줌 prefixOverrides: <trim>문 안의 쿼리 가장 앞에 해당하는 문자들이 있으면 자동으로 지워줌 -->
+		<if test="not detailConditions.empty">
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.boardDong)"><!-- detailConditions라는 map안에 boardDong이라는 key가 있다면  -->
+				AND INSTR(BOARD_DONG, #{detailConditions.boardDong}) > 0
+			</if>
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.searchWord)">
+				AND INSTR(PST_SJ, #{detailConditions.searchWord}) > 0
+			</if>
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.minDt) and @org.apache.commons.lang3.StringUtils@isNotBlank(detailConditions.maxDt)">
+				AND PST_WRT_DE BETWEEN TO_DATE(#{detailConditions.minDt},'YYYY/MM/DD') AND TO_DATE(#{detailConditions.maxDt},'YYYY/MM/DD')
+			</if>
+		</if>
+	</trim>
+</sql>
+
+<select id="selectTotalRecord" resultType="int" parameterType="kr.or.mat.paging.PaginationInfo">
+	WITH BOARD_VIEW AS(
+            SELECT *
+            FROM POSTING INNER JOIN BOARD ON(POSTING.BOARD_NO = BOARD.BOARD_NO)
+            WHERE POSTING.BOARD_NO = 'B002'
+        )
+        SELECT COUNT(*)
+        FROM USERS INNER JOIN BOARD_VIEW ON(USERS.USER_NO = BOARD_VIEW.USER_NO)
+        WHERE BOARD_DONG IN ( WITH ROOM_VIEW AS(
+	                            SELECT *
+	                            FROM RENT_ROOM INNER JOIN ROOM ON(RENT_ROOM.ROOM_NO = ROOM.ROOM_NO)
+	                            )
+                            SELECT REGION_3DEPTH_NM
+                            FROM CNTRCT_RENT INNER JOIN ROOM_VIEW ON(CNTRCT_RENT.RENT_ROOM_NO = ROOM_VIEW.RENT_ROOM_NO)
+                            WHERE LESSEE_NO =  #{detailConditions.lesseeNo, jdbcType=VARCHAR})
+    <include refid="searchFrag"/>
+</select>
+
+<!-- 게시물리스트 조회 쿼리  -->
+<select id="selectCommunityList" resultMap="communityMap" parameterType="kr.or.mat.paging.PaginationInfo">
+SELECT B.*
+FROM(
+    SELECT ROWNUM RNUM, A.*
+    FROM(
+        WITH BOARD_VIEW AS(
+            SELECT *
+            FROM POSTING INNER JOIN BOARD ON(POSTING.BOARD_NO = BOARD.BOARD_NO)
+            WHERE POSTING.BOARD_NO = 'B002'
+        )
+        SELECT PST_NO,
+                PST_SJ,
+                CASE 
+                   WHEN LENGTH(PST_CN) > 10 THEN SUBSTR(PST_CN, 1, 10) || '...'
+                   ELSE PST_CN
+                END AS PST_CN,
+                PST_RDCNT,
+                PST_WRT_DE,
+                PST_UPDDE_DT,
+                PST_DEL_DT,
+                PST_MNGR_YN,
+                PST_OTHBC_YN,
+                PST_DEL_YN,
+                BOARD_VIEW.UNITY_ATCHMNFL_NO AS UNITY_ATCHMNFL_NO,
+                USERS.USER_NO,
+                BOARD_DONG,
+                WEB_PATH
+        FROM USERS INNER JOIN BOARD_VIEW ON(USERS.USER_NO = BOARD_VIEW.USER_NO)
+        	 	   LEFT OUTER JOIN TB_ATTACH_FILE ON(USERS.UNITY_ATCHMNFL_NO = TB_ATTACH_FILE.UNITY_ATCHMNFL_NO)
+        WHERE BOARD_DONG IN ( WITH ROOM_VIEW AS (
+	                            SELECT *
+	                            FROM RENT_ROOM INNER JOIN ROOM ON(RENT_ROOM.ROOM_NO = ROOM.ROOM_NO)
+	                            )
+	                            SELECT REGION_3DEPTH_NM
+	                            FROM CNTRCT_RENT INNER JOIN ROOM_VIEW ON (CNTRCT_RENT.RENT_ROOM_NO = ROOM_VIEW.RENT_ROOM_NO)
+	                            WHERE LESSEE_NO =  #{detailConditions.lesseeNo, jdbcType=VARCHAR}
+                            )
+        AND PST_DEL_YN = 'N' 
+    	<include refid="searchFrag"/>
+    	ORDER BY PST_WRT_DE DESC
+    ) A
+) B
+<![CDATA[ 
+	WHERE RNUM  >= #{firstRecord} AND RNUM <= #{lastRecord}
+]]> 
+</select>
+
+<!-- 임차인이 임대하고있는 건물의 행정동 조회  -->
+<select id="selectLesseeBldgList" resultType="string" parameterType="string">
+WITH ROOM_VIEW AS(
+SELECT *
+FROM RENT_ROOM INNER JOIN ROOM ON(RENT_ROOM.ROOM_NO = ROOM.ROOM_NO)
+)
+SELECT REGION_3DEPTH_NM
+FROM CNTRCT_RENT INNER JOIN ROOM_VIEW ON(CNTRCT_RENT.RENT_ROOM_NO = ROOM_VIEW.RENT_ROOM_NO)
+WHERE LESSEE_NO = #{lesseeNo}
+</select>
+
+<!-- 게시글 조회수 증가 -->
+<update id="updateCommunityCnt" parameterType="string">
+UPDATE POSTING
+SET PST_RDCNT = PST_RDCNT+1
+WHERE PST_NO = #{pstNo}
+</update>
+
+<!-- 게시글 상세정보  -->
+<select id="selectCommunity" resultMap="communityMap" parameterType="string">
+SELECT  POSTING.PST_NO,
+       PST_SJ,
+       PST_CN,
+       PST_RDCNT,
+       PST_WRT_DE,
+       PST_UPDDE_DT,
+       PST_DEL_DT,
+       PST_MNGR_YN,
+       PST_OTHBC_YN,
+       PST_DEL_YN,
+       POSTING.UNITY_ATCHMNFL_NO AS UNITY_ATCHMNFL_NO,
+       BOARD_NO,
+       POSTING.USER_NO AS USER_NO,
+       USER_NO_CMNT,
+       BOARD_DONG,
+       WEB_PATH,
+       USERS.USER_NM as USER_NM
+FROM POSTING LEFT OUTER JOIN COMMENTS ON(POSTING.PST_NO = COMMENTS.PST_NO)
+			 INNER JOIN USERS ON(POSTING.USER_NO = USERS.USER_NO)
+		     LEFT OUTER JOIN TB_ATTACH_FILE ON(POSTING.UNITY_ATCHMNFL_NO = TB_ATTACH_FILE.UNITY_ATCHMNFL_NO)
+WHERE POSTING.PST_NO = #{pstNo}
+</select>
+
+<!-- 게시글 등록  -->
+<insert id="insertCommunity" parameterType="CommunityVO">
+<selectKey order="BEFORE" resultType="string" keyProperty="pstNo">
+SELECT 
+'Q'
+||TO_NUMBER(TO_CHAR(SYSDATE, 'YYMMDD'))
+||LPAD(NVL(TO_NUMBER(SUBSTR(MAX(PST_NO),8)),0)+1,3,'0')
+FROM POSTING
+</selectKey>
+INSERT INTO posting (
+    pst_no,
+    pst_sj,
+    pst_cn,
+    pst_rdcnt,
+    pst_wrt_de,
+    pst_mngr_yn,
+    pst_othbc_yn,
+    pst_del_yn,
+    unity_atchmnfl_no,
+    board_no,
+    user_no,
+    board_dong
+) VALUES (
+    #{pstNo},
+	#{pstSj},
+	#{pstCn},
+	0,
+	SYSDATE,
+	'Y',
+	'Y',
+	'N',
+	#{unityAtchmnflNo},
+	'B002',
+	#{userNo},
+	#{boardDong}
+)
+</insert>
+
+<!-- 게시글 수정  -->
+<update id="updateCommunity" parameterType="CommunityVO">
+UPDATE posting
+    SET 
+        PST_SJ = #{pstSj},
+        PST_CN = #{pstCn},
+        PST_UPDDE_DT = SYSDATE,
+        UNITY_ATCHMNFL_NO = #{unityAtchmnflNo}
+WHERE
+    pst_no = #{pstNo}
+</update>
+
+<!-- 게시글 삭제  --> 
+<update id="DeleteCommunity" parameterType="string">
+UPDATE posting
+    SET PST_DEL_YN = 'Y'
+WHERE
+    pst_no = #{pstNO}
+</update>
+
+<!-- 게시글 신고  -->
+<insert id="insertPostingReport" parameterType="PostingReportVO">
+<selectKey order="BEFORE" resultType="string" keyProperty="pstRprtNo">
+	SELECT 
+	'RP'
+	||TO_NUMBER(TO_CHAR(SYSDATE, 'YYMMDD'))
+	||LPAD(NVL(TO_NUMBER(SUBSTR(MAX(PST_RPRT_NO),9)),0)+1,3,'0')
+	FROM POSTING_REPORT
+</selectKey>
+	INSERT INTO posting_report (
+	    pst_rprt_no
+	    ,pst_rprt_dt
+	    ,pst_rprt_sj
+	    ,pst_rprt_cn
+	    ,pst_stts
+	    ,wrtr_no
+	    ,pst_no
+	) VALUES (
+		#{pstRprtNo}
+		,SYSDATE
+		,#{pstRprtSj}
+		,#{pstRprtCn}
+		,'대기중'
+		,#{wrtrNo}
+		,#{pstNo}
+	)
+</insert>
+</mapper>

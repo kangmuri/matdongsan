@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.mat.attachFile.mapper.TbAttachFileMapper">
+
+<insert id="insertTbAttachFile" parameterType="TbAttachFileVO">
+    <selectKey order="BEFORE" resultType="string" keyProperty="unityAtchmnflNo">
+        SELECT 
+            CASE WHEN #{unityAtchmnflNo} IS NOT NULL THEN #{unityAtchmnflNo}
+                 ELSE 'TA' || TO_CHAR(SYSDATE, 'YYMMDD') || TO_CHAR(tbAttachFile_seq.nextval, 'FM000')
+            END
+        FROM DUAL
+    </selectKey>
+    INSERT INTO TB_ATTACH_FILE(
+        UNITY_ATCHMNFL_NO,
+        ATCHMNFL_SN,
+        FILE_PATH,
+        WEB_PATH,
+        STRE_FILE_NM,
+        FILE_SIZE,
+        FILE_TYPE,
+        REG_USER_ID
+    )
+    VALUES (
+        #{unityAtchmnflNo, jdbcType=VARCHAR},
+        #{atchmnflSn, jdbcType=NUMERIC},
+        #{filePath, jdbcType=VARCHAR},
+        #{webPath, jdbcType=VARCHAR},
+        #{streFileNm, jdbcType=VARCHAR},
+        #{fileSize, jdbcType=NUMERIC},
+        #{fileType, jdbcType=VARCHAR},
+        #{regUserId, jdbcType=VARCHAR}
+    )
+</insert>
+
+<delete id="deleteAttatch" parameterType="TbAttachFileVO">
+DELETE
+FROM TB_ATTACH_FILE
+WHERE UNITY_ATCHMNFL_NO =  #{unityAtchmnflNo, jdbcType=VARCHAR}
+</delete>
+<select id="selectTbAttachFileList" parameterType="TbAttachFileVO">
+	SELECT *
+	FROM TB_ATTACH_FILE
+	WHERE UNITY_ATCHMNFL_NO = #{unityAtchmnflNo, jdbcType=VARCHAR}
+</select>
+</mapper>
